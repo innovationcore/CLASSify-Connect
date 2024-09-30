@@ -5,11 +5,7 @@ namespace CAAIModules\CLASSifyConnect;
 use ExternalModules\AbstractExternalModule;
 
 class CLASSifyConnect extends AbstractExternalModule {
-
-    // This is generally where your module's hooks will live
-    function redcap_every_page_top($project_id) {
-        print_r('Hello world! I am a message produced by a hook!');
+    public function redcap_module_project_settings_page($project_id) {
+        $this->includeJS('js/project_settings.js');
     }
-
-    
 }

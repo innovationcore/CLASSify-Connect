@@ -13,11 +13,6 @@
     "system-settings": [],
     "project-settings": [
         {
-		    "key": "admin-only-warning",
-		    "type": "descriptive",
-		    "name": "<br><h6>Only users with design rights on all source projects are allowed to configure this module.</h6><br>"
-		},
-        {
             "key": "classify-connection",
             "name": "Connect to CLASSify",
             "required": false,
@@ -26,17 +21,20 @@
             "sub_settings": [
                 {
                     "key": "classify-account",
-                    "name": "CLASSify Account ID",
+                    "name": "CLASSify Email",
                     "required": true,
                     "type": "text",
                     "repeatable": false
                 },
                 {
-                    "key": "check-connection",
-                    "name": "Check CLASSify connection.",
-                    "required": false,
-                    "type": "checkbox",
-                    "repeatable": false
+                    "key": "check-account-status",
+                    "name": "<button id='account-status'>Check CLASSify Account Status</button>",
+                    "type": "descriptive"
+                },
+                {
+                    "key": "collaboration-request",
+                    "name": "If you would like to use the CLASSify Connect plugin but do not have CLASSify access, you may fill out the <a href='https://redcap.uky.edu/redcap/surveys/?s=K7WTCDH37AXLEKNM'>Center for Applied AI Collaboration Request</a> form for review by our team. ",
+                    "type": "descriptive"
                 },
                 {
 					"key": "form-id",
@@ -50,14 +48,12 @@
                     "name": "Select a field to use as a classifier. Note: Fewer classifiers tend to result in better models.",
                     "required": true,
                     "type": "field-list",
-                    "repeatable": true
+                    "repeatable": false
                 },
                 {
                     "key": "upload-dataset",
-                    "name": "Send Dataset to CLASSify.",
-                    "required": false,
-                    "type": "checkbox",
-                    "repeatable": false
+                    "name": "<button id='my-custom-button'>Upload Form Data to CLASSify</button>",
+                    "type": "descriptive"
                 }
             ]
         }
