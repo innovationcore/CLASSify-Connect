@@ -1,3 +1,4 @@
+This has a possible starting format for configuring your CLASSify job from the REDCap interface.
 {
     "name": "CLASSify Connect",
     "description": "A tool which allows a user to connect their REDCap data to the CLASSify assisted machine learning training service.",
@@ -32,13 +33,6 @@
                     "repeatable": false
                 },
                 {
-                    "key": "check-connection",
-                    "name": "Check CLASSify connection.",
-                    "required": false,
-                    "type": "checkbox",
-                    "repeatable": false
-                },
-                {
 					"key": "form-id",
 					"name": "Form Selection",
 					"required": true,
@@ -53,8 +47,36 @@
                     "repeatable": true
                 },
                 {
-                    "key": "upload-dataset",
-                    "name": "Send Dataset to CLASSify.",
+                    "key": "separate-testset",
+                    "name": "Separate Testset?",
+                    "required": false,
+                    "type": "checkbox",
+                    "repeatable": false
+                },
+                {
+                    "key": "synthesize-original",
+                    "name": "Synthesize Original?",
+                    "required": false,
+                    "type": "checkbox",
+                    "repeatable": false
+                },
+                {
+                    "key": "synthesize-new",
+                    "name": "Synthesize New?",
+                    "required": false,
+                    "type": "checkbox",
+                    "repeatable": false
+                },
+                {
+                    "key": "synthesize-missing",
+                    "name": "Synthesize Missing?",
+                    "required": false,
+                    "type": "checkbox",
+                    "repeatable": false
+                },
+                {
+                    "key": "auto-check",
+                    "name": "Automatically retrain model when new data is entered?",
                     "required": false,
                     "type": "checkbox",
                     "repeatable": false
