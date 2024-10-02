@@ -28,7 +28,7 @@
                 },
                 {
                     "key": "check-account-status",
-                    "name": "<button id='account-status' onclick='checkEmail(\"noah.perry@uky.edu\")'>Check CLASSify Account Status</button>",
+                    "name": "<button id='account-status' onclick='checkEmail(\"noah.perry@uky.edu\")'>Check CLASSify Account Status</button><p id='response'></p>",
                     "type": "descriptive"
                 },
                 {
