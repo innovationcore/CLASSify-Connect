@@ -20,7 +20,7 @@
             "repeatable": false,
             "sub_settings": [
                 {
-                    "key": "classify-account",
+                    "key": "classify-email",
                     "name": "CLASSify Email",
                     "required": true,
                     "type": "text",
@@ -28,7 +28,7 @@
                 },
                 {
                     "key": "check-account-status",
-                    "name": "<button id='account-status' onclick='checkEmail(\"noah.perry@uky.edu\")'>Check CLASSify Account Status</button><p id='response'></p>",
+                    "name": "<button id='account-status' onclick='checkEmail()'>Check CLASSify Account Status</button><p id='response'></p>",
                     "type": "descriptive"
                 },
                 {

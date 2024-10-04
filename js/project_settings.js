@@ -2,7 +2,9 @@ function handleUpload() {
     alert('Upload was clicked!');
 }
 
-function checkEmail(email) {
+function checkEmail() {
+    const email_field = document.getElementsByName('classify-email____0')[0];
+    let email = email_field.value;
     console.log(email);
     $.get(`https://data.ai.uky.edu/classify/users/getUserFromEmail?email=${email}`, function(data, status) {
         let response = JSON.stringify(data);
@@ -20,7 +22,11 @@ function checkEmail(email) {
     })
 }
 
+function collectSettings(userSettings) {
+    settings = userSettings;
+}
+
 settings = {}
 
-$('#upload-dataset').click(handleUpload);
-$('#account-status').click(checkEmail);
+/*$('#upload-dataset').click(handleUpload);
+$('#account-status').click(checkEmail);*/
