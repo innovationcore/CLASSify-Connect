@@ -45,13 +45,27 @@ class CLASSifyConnect extends AbstractExternalModule {
             $project_id = $_GET['pid']; // or however you're getting the project ID
             $form = $this->getProjectSetting('form-id');
             $classifier = $this->getProjectSetting('class-field');
+            $email = $this->getProjectSetting('classify-email');
             $data = REDCap::getData($project_id, 'csv');
+            $project_title = REDCap::getProjectTitle();
+            $filename = $this->getProjectSetting('filename');
 
             ?>
             <script>
                 const moduleData = <?= json_encode($data) ?>;
                 const selectedForms = <?= json_encode($form) ?>;
                 const classifier = <?= json_encode($classifier) ?>;
+                const email = <?= json_encode($email) ?>;
+                const user_filename = <?= json_encode($filename) ?>;
+                const project_title = <?= json_encode($project_title) ?>;
+                var filename = null;
+                // If they provide an alternative filename, we can use that. Otherwise, we can just use the project title.
+                if (user_filename.length > 0) {
+                    filename = user_filename[0]
+                }
+                else {
+                    filename = project_title
+                }
             </script>
 
             <script src="<?= $this->getUrl('js/project_settings.js') ?>"></script>

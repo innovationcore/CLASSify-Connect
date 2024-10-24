@@ -20,6 +20,11 @@
             "repeatable": false,
             "sub_settings": [
                 {
+                    "key": "save-request",
+                    "name": "Make sure that you save your settings before uploading to CLASSify or changes will not be reflected in the request.",
+                    "type": "descriptive"
+                },
+                {
                     "key": "classify-email",
                     "name": "CLASSify Email",
                     "required": true,
@@ -44,13 +49,15 @@
                     "repeatable": false
                 },
                 {
-                    "key": "save-request",
-                    "name": "Make sure that you save your settings before uploading to CLASSify or they will not be reflected in the request.",
-                    "type": "descriptive"
+                    "key": "filename",
+                    "name": "Name the csv which is uploaded to CLASSify. Project title will be used if this field is left blank. (filename should look like filename.csv)",
+                    "required": false,
+                    "type": "text",
+                    "repeatable": false
                 },
                 {
                     "key": "upload-dataset",
-                    "name": "<button id='upload-button' onclick='handleUpload()'>Upload Form Data to CLASSify</button>",
+                    "name": "<button id='upload-button' onclick='handleUpload()'>Upload Form Data to CLASSify</button><div id='upload-result'></div>",
                     "type": "descriptive"
                 }
             ]
