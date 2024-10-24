@@ -37,13 +37,6 @@
                     "type": "descriptive"
                 },
                 {
-					"key": "form-id",
-					"name": "Form Selection",
-					"required": true,
-					"type": "form-list",
-					"repeatable": false
-				},
-                {
                     "key": "class-field",
                     "name": "Select a field to use as a classifier.",
                     "required": true,
@@ -51,8 +44,13 @@
                     "repeatable": false
                 },
                 {
+                    "key": "save-request",
+                    "name": "Make sure that you save your settings before uploading to CLASSify or they will not be reflected in the request.",
+                    "type": "descriptive"
+                },
+                {
                     "key": "upload-dataset",
-                    "name": "<button id='upload-dataset' onclick='handleUpload()'>Upload Form Data to CLASSify</button>",
+                    "name": "<button id='upload-button' onclick='handleUpload()'>Upload Form Data to CLASSify</button>",
                     "type": "descriptive"
                 }
             ]

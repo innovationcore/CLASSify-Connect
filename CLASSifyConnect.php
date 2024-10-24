@@ -36,27 +36,26 @@ class CLASSifyConnect extends AbstractExternalModule {
         $this->includeJS('js/project_settings.js');
     }
 
-    function redcap_every_page_top($project_id) {
-        print_r("oh yeah baby this script ran.");
-        $users = REDCap::getUsers();
-        //print_r(REDCap::getProjectTitle());
-        $user_to_look_for = "ncpe227";
-        if (in_array($user_to_look_for, $users)) {
-            print_r("User $user_to_look_for has access to this project.");
-        } else {
-            print_r("User $user_to_look_for does NOT have access to this project.");
-        }
+    protected function dataToJavascript() {
 
-        if (self::isExternalModulePage()) {
-            $this->includeJS('js/project_settings.js');
-            print_r("oh yeah baybee, that's a module page");
-
-        }
     }
 
+    function redcap_every_page_top($project_id) {
+        if (self::isExternalModulePage()) {
+            $project_id = $_GET['pid']; // or however you're getting the project ID
+            $form = $this->getProjectSetting('form-id');
+            $classifier = $this->getProjectSetting('class-field');
+            $data = REDCap::getData($project_id, 'csv');
 
-    /*function redcap_every_page_top($project_id) {
-        print_r('oh yeah baby this script ran.');
-    }*/
+            ?>
+            <script>
+                const moduleData = <?= json_encode($data) ?>;
+                const selectedForms = <?= json_encode($form) ?>;
+                const classifier = <?= json_encode($classifier) ?>;
+            </script>
 
+            <script src="<?= $this->getUrl('js/project_settings.js') ?>"></script>
+            <?php
+        }
+    }
 }

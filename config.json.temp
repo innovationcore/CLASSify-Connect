@@ -1,4 +1,3 @@
-This has a possible starting format for configuring your CLASSify job from the REDCap interface.
 {
     "name": "CLASSify Connect",
     "description": "A tool which allows a user to connect their REDCap data to the CLASSify assisted machine learning training service.",
@@ -14,11 +13,6 @@ This has a possible starting format for configuring your CLASSify job from the R
     "system-settings": [],
     "project-settings": [
         {
-		    "key": "admin-only-warning",
-		    "type": "descriptive",
-		    "name": "<br><h6>Only users with design rights on all source projects are allowed to configure this module.</h6><br>"
-		},
-        {
             "key": "classify-connection",
             "name": "Connect to CLASSify",
             "required": false,
@@ -26,11 +20,21 @@ This has a possible starting format for configuring your CLASSify job from the R
             "repeatable": false,
             "sub_settings": [
                 {
-                    "key": "classify-account",
-                    "name": "CLASSify Account ID",
+                    "key": "classify-email",
+                    "name": "CLASSify Email",
                     "required": true,
                     "type": "text",
                     "repeatable": false
+                },
+                {
+                    "key": "check-account-status",
+                    "name": "<button id='account-status' onclick='checkEmail()'>Check CLASSify Account Status</button><p id='response'></p>",
+                    "type": "descriptive"
+                },
+                {
+                    "key": "collaboration-request",
+                    "name": "If you would like to use the CLASSify Connect plugin but do not have CLASSify access, you may fill out the <a href='https://redcap.uky.edu/redcap/surveys/?s=K7WTCDH37AXLEKNM' target='_blank'>Center for Applied AI Collaboration Request</a> form for review by our team. ",
+                    "type": "descriptive"
                 },
                 {
 					"key": "form-id",
@@ -40,46 +44,21 @@ This has a possible starting format for configuring your CLASSify job from the R
 					"repeatable": false
 				},
                 {
-                    "key": "class-fields",
-                    "name": "Select a field to use as a classifier. Note: Fewer classifiers tend to result in better models.",
+                    "key": "class-field",
+                    "name": "Select a field to use as a classifier.",
                     "required": true,
                     "type": "field-list",
-                    "repeatable": true
-                },
-                {
-                    "key": "separate-testset",
-                    "name": "Separate Testset?",
-                    "required": false,
-                    "type": "checkbox",
                     "repeatable": false
                 },
                 {
-                    "key": "synthesize-original",
-                    "name": "Synthesize Original?",
-                    "required": false,
-                    "type": "checkbox",
-                    "repeatable": false
+                    "key": "save-request",
+                    "name": "Make sure that you save your settings before uploading to CLASSify or they will not be reflected in the request.",
+                    "type": "descriptive"
                 },
                 {
-                    "key": "synthesize-new",
-                    "name": "Synthesize New?",
-                    "required": false,
-                    "type": "checkbox",
-                    "repeatable": false
-                },
-                {
-                    "key": "synthesize-missing",
-                    "name": "Synthesize Missing?",
-                    "required": false,
-                    "type": "checkbox",
-                    "repeatable": false
-                },
-                {
-                    "key": "auto-check",
-                    "name": "Automatically retrain model when new data is entered?",
-                    "required": false,
-                    "type": "checkbox",
-                    "repeatable": false
+                    "key": "upload-dataset",
+                    "name": "<button id='upload-button' onclick='handleUpload()'>Upload Form Data to CLASSify</button>",
+                    "type": "descriptive"
                 }
             ]
         }

@@ -1,5 +1,7 @@
 function handleUpload() {
-    alert('Upload was clicked!');
+    const parsed = parseCSVWithNewNames(moduleData, classifier[0]);
+    console.log(classifier);
+    console.log(parsed);
 }
 
 function checkEmail() {
@@ -13,8 +15,7 @@ function checkEmail() {
         console.log(res_element);
 
         if (!response.success) {
-            res_element.innerText = `${email} is not registered with CLASSify. Fill out the <a href='https://redcap.uky.edu/redcap/surveys/?s=K7WTCDH37AXLEKNM' target='_blank'>Center for Applied AI Collaboration Form</a> which allows you to apply for access. 
-            \n\nNote: Your browser may block this popup. Allow it access to be redirected to the form.`;
+            res_element.innerText = `${email} is not registered with CLASSify.`;
         }
         else {
             res_element.innerText = `${email} is registered with CLASSify. You may proceed.`;
@@ -22,11 +23,32 @@ function checkEmail() {
     })
 }
 
-function collectSettings(userSettings) {
-    settings = userSettings;
+function parseCSVWithNewNames(csvString, classifierField) {
+    if (!csvString || !classifierField) {
+        console.error('Invalid input. Please provide both CSV content and a classifier.');
+        return;
+    }
+
+    const lines = csvString.split('\n');
+    if (lines.length < 2) {
+        console.error('Invalid CSV format. At least one header row and one data row are required.');
+        return;
+    }
+
+    // Replace header
+    const headers = lines[0].split(',').map(h => {
+        const cleanHeader = h.trim();
+        return cleanHeader === classifierField ? "class" : cleanHeader;
+    });
+
+    // Check if the classifierField was found in headers
+    if (!headers.includes('class')) {
+        console.warn(`The classifier field "${classifierField}" was not found in the CSV headers.`);
+    }
+
+    // Create new CSV string with renamed header
+    lines[0] = headers.join(',');
+
+
+    return lines.join('\n');
 }
-
-settings = {}
-
-/*$('#upload-dataset').click(handleUpload);
-$('#account-status').click(checkEmail);*/
