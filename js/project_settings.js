@@ -2,14 +2,14 @@ function handleUpload() {
     // Parse the CSV with the classifier field
     const parsed = parseCSVWithNewNames(moduleData, classifier[0]);
     const upload_url = 'https://data.ai.uky.edu/classify/reports/submit';
-    var user_uuid = '';
+    const s3_url = 'https://data.ai.uky.edu/classify/api/get_column_types';
 
     // Get email field from input
     const email = document.getElementsByName('classify-email____0')[0].value;
 
     // Get the user UUID from the email
     $.get(`https://data.ai.uky.edu/classify/users/getUserFromEmail?email=${email}`, function(data, status) {
-        user_uuid = data.user_id;
+        const user_uuid = data.user_id;
 
         // Create form data object
         var form_data = new FormData();
@@ -28,7 +28,28 @@ function handleUpload() {
         form_data.append('file', csvBlob, currentFile);
         form_data.append('user_uuid', user_uuid);
         form_data.append('filename', currentFile);
+        console.log(currentFile);
 
+        $.ajax({
+            url: s3_url,
+            type: 'POST',
+            data: form_data,
+            processData: false,  // Don't process the files
+            contentType: false,  // Let jQuery set the content type
+            success: function (response) {
+                const response_div = document.getElementById('upload-result');
+
+                if (response.success) {
+                    console.log('File successfully uploaded to s3.', response);
+                } else {
+                    console.log('Error uploading file to s3.', response);
+                }
+
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error('Error uploading file:', textStatus, errorThrown);
+            }
+        });
         // Send the form data via a POST request
         $.ajax({
             url: upload_url,
@@ -39,9 +60,14 @@ function handleUpload() {
             success: function(response) {
                 const response_div = document.getElementById('upload-result');
 
-                response_div.innerHTML = response.message + "<button onclick='classifyRedirect()'>Go to CLASSify</button>"
+                if (response.success) {
+                    response_div.innerHTML = response.message + "<button onclick='classifyRedirect()'>Go to CLASSify</button>";
+                    console.log('File successfully uploaded', response);
+                }
+                else {
+                    response_div.innerHTML = response.message;
+                }
 
-                console.log('File successfully uploaded', response);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 console.error('Error uploading file:', textStatus, errorThrown);
