@@ -1,8 +1,46 @@
+const upload_url = 'https://data.ai.uky.edu/classify/reports/submit';
+const s3_url = 'https://data.ai.uky.edu/classify/api/get_column_types';
+const change_columns = 'https://data.ai.uky.edu/classify/api/change_column_types';
+
 function handleUpload() {
+    document.getElementById('columnsModal').innerHTML = `<div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="columnsModalLabel">Preview&nbsp;</h5>
+                    <div class="spinner-border" role="status" id="spinner" style="display:none;">
+                      <span class="sr-only">Loading...</span>
+                    </div>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="columnsModalBody">
+                    <h5>Choose which columns to include in uploaded dataset.</h5>
+                    <h6>You may also change data types of each column here.</h6>
+                    <h6>Categorical variables will be one-hot encoded.</h6>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <form id="columns">
+                                <div id="column_names" class="columns-div">
+
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="submit-to-automl">Upload Dataset</button>
+                    <a href="https://data.ai.uky.edu/classify/result" id="gotoMLOpts" target="_blank" type="button" class="btn btn-primary mr-2" style="display:none;">
+                        <i class="fa fa-eye"></i> View Uploaded Data
+                    </a>
+                </div>
+            </div>
+        </div>`;
+
+
     // Parse the CSV with the classifier field
     const parsed = parseCSVWithNewNames(moduleData, classifier[0]);
-    const upload_url = 'https://data.ai.uky.edu/classify/reports/submit';
-    const s3_url = 'https://data.ai.uky.edu/classify/api/get_column_types';
 
     // Get email field from input
     const email = document.getElementsByName('classify-email____0')[0].value;
@@ -22,13 +60,10 @@ function handleUpload() {
 
         // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
         currentFile = currentFile.endsWith('.csv') ? currentFile : currentFile + '.csv';
-        currentFile = currentFile.replace('.csv', `_${user_uuid}.csv`);
 
         // Append the Blob and other fields to the form data
         form_data.append('file', csvBlob, currentFile);
         form_data.append('user_uuid', user_uuid);
-        form_data.append('filename', currentFile);
-        console.log(currentFile);
 
         $.ajax({
             url: s3_url,
@@ -41,6 +76,100 @@ function handleUpload() {
 
                 if (response.success) {
                     console.log('File successfully uploaded to s3.', response);
+                    console.log(response.data_types);
+                    $('#columnsModal').modal('show');
+                    showColumns(response.data_types);
+                    $('#submit-to-automl').click(function() {
+                        if(confirm("Are you sure you want to submit this data for processing?")){
+                            $('#spinner').show();
+                            //let form = $('#column_names').serializeArray();
+                            let form = [];
+                            $('.form-check-input').each(function(index, element) {
+                                if (element.id !== 'class') {
+                                    if ($(element).attr('type') == 'checkbox') {
+                                        if ($(element).is(':checked')) {
+                                            let checked_type = document.querySelector('input[name="'+element.id+'"]:checked').id;
+                                            let type = checked_type.substring(checked_type.lastIndexOf('-')+1);
+                                            form.push({column:element.id, data_type:type, checked:true})
+                                        } else {
+                                            form.push({column:element.id, data_type:'none', checked:false}) //If dropped column, update actions
+                                            $.ajax({
+                                                url: 'https://data.ai.uky.edu/classify/actions/update_action',
+                                                method: 'POST',
+                                                data: {
+                                                    'filename': currentFile,
+                                                    'user_uuid': user_uuid,
+                                                    'action': 'Dropped column '+element.id
+                                                },
+                                                crossDomain: true,
+                                                success: function(res) {
+                                                },
+                                                error: function(xhr, ajaxOptions, thrownError) {
+                                                    console.log('Error communicating with the server');
+                                                }
+                                            });
+                                        }
+
+                                    }
+                                }
+                            });
+                            if (currentFile !== null) {
+                                $.ajax({
+                                    url: change_columns,
+                                    type: 'POST',
+                                    data: JSON.stringify({
+                                        'filename': currentFile.replace('.csv', `_${user_uuid}.csv`),
+                                        'data_types': JSON.stringify(form)
+                                    }),
+                                    contentType: 'application/json; charset=utf-8',
+                                    success: function(data) {
+                                        if (data.success == false) {
+                                            $('#spinner').hide();
+                                            //showError(data.message);
+                                            return null;
+                                        }
+                                        else {
+                                            console.log(data.message);
+                                            $('#gotoMLOpts').show();
+                                            $('#submit-to-automl').hide();
+                                            //uploaded_to_clearml=true;
+                                            $('#spinner').hide();
+                                            // Send the form data via a POST request
+                                            $.ajax({
+                                                url: upload_url,
+                                                type: 'POST',
+                                                data: form_data,
+                                                processData: false,  // Don't process the files
+                                                contentType: false,  // Let jQuery set the content type
+                                                success: function(response) {
+                                                    const response_div = document.getElementById('upload-result');
+
+                                                    if (response.success) {
+                                                        console.log('File successfully uploaded', response);
+                                                    }
+                                                    else {
+                                                        console.log(response.message);
+                                                    }
+
+                                                },
+                                                error: function(jqXHR, textStatus, errorThrown) {
+                                                    console.error('Error uploading file:', textStatus, errorThrown);
+                                                }
+                                            });
+                                        }
+
+                                    },
+                                    error: function (xhr, status, error) {
+                                        console.log("Error communicating with the server.");
+                                        return null;
+                                    }
+                                });
+
+                            } else {
+                                console.log("Please upload a file first.");
+                            }
+                        }
+                    });
                 } else {
                     console.log('Error uploading file to s3.', response);
                 }
@@ -50,33 +179,100 @@ function handleUpload() {
                 console.error('Error uploading file:', textStatus, errorThrown);
             }
         });
-        // Send the form data via a POST request
-        $.ajax({
-            url: upload_url,
-            type: 'POST',
-            data: form_data,
-            processData: false,  // Don't process the files
-            contentType: false,  // Let jQuery set the content type
-            success: function(response) {
-                const response_div = document.getElementById('upload-result');
+    });
+}
 
-                if (response.success) {
-                    response_div.innerHTML = response.message + "<button onclick='classifyRedirect()'>Go to CLASSify</button>";
-                    console.log('File successfully uploaded', response);
-                }
-                else {
-                    response_div.innerHTML = response.message;
-                }
+function showColumns(data_types) {
+    let toAppendBool = "";
+    let toggle = 0;
+    Object.keys(data_types).forEach((column) => {
+        column_name = column.replace(/^\w/, c => c.toUpperCase());
+        if (column == 'class') {
+            toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
+            if (toggle == 1) {
+                toAppendBool += ' background-color: #DDDDDD;'
+            }
+            toAppendBool += `">
 
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
-                console.error('Error uploading file:', textStatus, errorThrown);
+                                        <input id="${column}" type="checkbox" class="form-check-input" checked disabled>
+                                        <label for="${column}" class="bold-label">${column_name}</label>
+                                    </div>`;
+        } else {
+            toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
+            if (toggle == 1) {
+                toAppendBool += ' background-color: #DDDDDD;'
+            }
+            toAppendBool += `">
+                                        <input id="${column}" type="checkbox" class="form-check-input" checked>
+                                        <label for="${column}" class="bold-label">${column_name}</label>
+                                        <div class="row">
+                                            <div class="col-md-1">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-check-label mb-3" title="integer">
+                                                    <input id="${column}-integer" name="${column}" type="radio" class="form-check-input"`
+            if (data_types[column] == 'integer') {
+                toAppendBool += ' checked'
+            }
+            toAppendBool += `>Integer
+                                                </label>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-check-label mb-3" title="float">
+                                                    <input id="${column}-float" name="${column}" type="radio" class="form-check-input"`
+            if (data_types[column] == 'float') {
+                toAppendBool += ' checked'
+            }
+            toAppendBool += `>Float
+                                                </label>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-check-label mb-3" title="bool">
+                                                    <input id="${column}-bool" name="${column}" type="radio" class="form-check-input"`
+            if (data_types[column] == 'bool') {
+                toAppendBool += ' checked'
+            }
+            toAppendBool += `>Bool
+                                                </label>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-check-label mb-3" title="categorical">
+                                                    <input id="${column}-categorical" name="${column}" type="radio" class="form-check-input"`
+            if (data_types[column] == 'string') {
+                toAppendBool += ' checked'
+            }
+            toAppendBool += `>Categorical
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>`;
+        }
+        if (toggle == 0) {
+            toggle = 1;
+        } else {
+            toggle = 0;
+        }
+    });
+    $('#columnsModal #column_names').append(toAppendBool);
+    var modal = document.getElementById('columnsModal');
+    var modal_checkboxes = modal.querySelectorAll("input[type='checkbox']")
+
+    modal_checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener('click', function () {
+            if (!this.checked) {
+                var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
+                radios.forEach(function (radio) {
+                    radio.disabled = true;
+                });
+            } else {
+                var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
+                radios.forEach(function (radio) {
+                    radio.disabled = false;
+                });
             }
         });
     });
 }
-
-
 
 function checkEmail() {
     const email_field = document.getElementsByName('classify-email____0')[0];
@@ -115,15 +311,17 @@ function parseCSVWithNewNames(csvString, classifierField) {
     });
 
     // Check if the classifierField was found in headers
-    if (!headers.includes('class')) {
+    const classIndex = headers.indexOf("class");
+    if (classIndex === -1) {
         console.warn(`The classifier field "${classifierField}" was not found in the CSV headers.`);
     }
 
-    // Create new CSV string with renamed header
-    lines[0] = headers.join(',');
+    // Replace `?` with `0` and filter rows with a blank in the "class" column
+    const updatedRows = lines.slice(1)
+        .map(row => row.split(',').map(value => value.trim() === '?' ? '0' : value.trim()))
+        .filter(row => row[classIndex] !== '');
 
-
-    return lines.join('\n');
+    return [headers.join(','), ...updatedRows.map(row => row.join(','))].join('\n');
 }
 
 function classifyRedirect() {

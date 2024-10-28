@@ -57,7 +57,7 @@
                 },
                 {
                     "key": "upload-dataset",
-                    "name": "<button id='upload-button' onclick='handleUpload()'>Upload Form Data to CLASSify</button><div id='upload-result'></div>",
+                    "name": "<button id='upload-button' onclick='handleUpload()'>Upload Form Data to CLASSify</button><div id='columnsModal' class='modal fade' tabindex='-1' role='dialog' aria-labelledby='columnsModalLabel' aria-hidden='true'></div><div id='upload-result'></div>",
                     "type": "descriptive"
                 }
             ]
