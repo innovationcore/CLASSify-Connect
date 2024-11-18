@@ -40,6 +40,7 @@ function handleUpload() {
 
     // Parse the CSV with the classifier field
     const parsed = parseCSVWithNewNames(moduleData, classifier[0]);
+    console.log(moduleData);
 
     // Get email field from input
     const email = document.getElementsByName('classify-email____0')[0].value;
@@ -84,18 +85,18 @@ function handleUpload() {
                             success: function(res) {
                                 if (res.success) {
                                     console.log(res.report_uuid);
-                                    //let fname = res.file_name;
-                                    $.ajax({
+                                    let report_uuid = res.report_uuid;
+                                    /*$.ajax({
                                         url: `${classify_root}/actions/update_action`,
                                         method: 'POST',
                                         data: {
-                                            'report_uuid': res.report_uuid,
+                                            'report_uuid': report_uuid,
                                             'user_uuid': user_uuid,
                                             'action': 'Uploaded dataset'
                                         },
                                         success: function (res) {
                                             console.log(res);
-                                            if (res.success) {
+                                            if (res.success) {*/
                                                 $.ajax({
                                                     url: `${classify_api}/get_column_types`,
                                                     type: 'POST',
@@ -107,6 +108,7 @@ function handleUpload() {
                                                         console.log('Dataset uploaded');
                                                         $('#uploadModal').modal('hide');
                                                         $('#columnsModal').modal('show');
+                                                        console.log(data.missing_values);
                                                         showColumns(data.data_types, data.missing_values);
                                                     },
                                                     error: function (xhr, status, error) {
@@ -115,7 +117,7 @@ function handleUpload() {
                                                         return null;
                                                     }
                                                 });
-                                            } else {
+                                            /*} else {
                                                 console.log(res.message);
                                                 toggleLoadingScreenOverlay();
                                             }
@@ -123,10 +125,14 @@ function handleUpload() {
                                         error: function (xhr, ajaxOptions, thrownError) {
                                             toggleLoadingScreenOverlay();
                                             console.log('Error communicating with update_action.');
+                                            console.log(xhr);
+                                            console.log(ajaxOptions);
+                                            console.log(thrownError);
                                         }
-                                    });
+                                    });*/
 
-                                } else {
+                                }
+                                else {
                                     console.log(res.message);
                                     toggleLoadingScreenOverlay();
                                 }
@@ -564,13 +570,14 @@ function parseCSVWithNewNames(csvString, classifierField) {
         console.warn(`The classifier field "${classifierField}" was not found in the CSV headers.`);
     }
 
-    // Replace `?` with `0` and filter rows with a blank in the "class" column
+    // Replace ? with 0 and filter rows with a blank in the "class" column
     const updatedRows = lines.slice(1)
-        .map(row => row.split(',').map(value => value.trim() === '?' ? '0' : value.trim()))
+        .map(row => row.split(',').map(value => value.trim() === '?' ? '' : value.trim()))
         .filter(row => row[classIndex] !== '');
 
     return [headers.join(','), ...updatedRows.map(row => row.join(','))].join('\n');
 }
+
 
 function classifyRedirect() {
     window.open(`${classify_root}/result`, "_blank");
