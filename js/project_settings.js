@@ -1,5 +1,10 @@
 const classify_root = 'https://data.ai.uky.edu/classify';
 const classify_api = 'https://data.ai.uky.edu/classify/api';
+let uploaded_to_clearml = false;
+
+var userUUID = null;
+var currentFileUUID = null;
+var reportUUID = null;
 
 function handleUpload() {
     document.getElementById('columnsModal').innerHTML = `<div class="modal-dialog" role="document">
@@ -9,7 +14,7 @@ function handleUpload() {
                     <div class="spinner-border" role="status" id="spinner" style="display:none;">
                       <span class="sr-only">Loading...</span>
                     </div>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal()">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -28,40 +33,42 @@ function handleUpload() {
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="close_modal()">Close</button>
                     <button type="button" class="btn btn-primary" id="submit-to-automl">Upload Dataset</button>
                     <a href="${classify_root}/result" id="gotoMLOpts" target="_blank" type="button" class="btn btn-primary mr-2" style="display:none;">
                         <i class="fa fa-eye"></i> View Uploaded Data
                     </a>
                 </div>
             </div>
-        </div>`;
-
+        </div>
+        <div id="cover-spin"></div>
+`;
 
     // Parse the CSV with the classifier field
     const parsed = parseCSVWithNewNames(moduleData, classifier[0]);
-    console.log(moduleData);
 
     // Get email field from input
     const email = document.getElementsByName('classify-email____0')[0].value;
+
+    // Define or fallback to a default filename
+    var currentFile = filename; // Fallback if filename is not defined
+
+    // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
+    currentFile = currentFile.endsWith('.csv') ? currentFile : currentFile + '.csv';
 
     $.ajax({
         url: `${classify_root}/users/getUserFromEmail?email=${email}`,
         method: 'get',
         success: function(data) {
             const user_uuid = data.user_id;
+            userUUID = data.user_id;
+            currentFileUUID = currentFile.split('.csv')[0] + `_${userUUID}.csv`;
 
             // Create form data object
             var form_data = new FormData();
 
             // Create a Blob from the parsed CSV string
             const csvBlob = new Blob([parsed], { type: 'text/csv' });
-
-            // Define or fallback to a default filename
-            var currentFile = filename; // Fallback if filename is not defined
-
-            // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
-            currentFile = currentFile.endsWith('.csv') ? currentFile : currentFile + '.csv';
 
             // Append the Blob and other fields to the form data
             form_data.append('file', csvBlob, currentFile);
@@ -84,19 +91,20 @@ function handleUpload() {
                             contentType: false,
                             success: function(res) {
                                 if (res.success) {
-                                    console.log(res.report_uuid);
+                                    reportUUID = res.report_uuid;
                                     let report_uuid = res.report_uuid;
-                                    /*$.ajax({
+                                    $.ajax({
                                         url: `${classify_root}/actions/update_action`,
                                         method: 'POST',
                                         data: {
                                             'report_uuid': report_uuid,
                                             'user_uuid': user_uuid,
-                                            'action': 'Uploaded dataset'
+                                            'action': 'Uploaded dataset',
+                                            'session_id': 'REDCap Upload',
+                                            'api_key': '7217be72-156e-4bda-9798-d7d6c8fc59da'
                                         },
                                         success: function (res) {
-                                            console.log(res);
-                                            if (res.success) {*/
+                                            if (res.success) {
                                                 $.ajax({
                                                     url: `${classify_api}/get_column_types`,
                                                     type: 'POST',
@@ -117,7 +125,7 @@ function handleUpload() {
                                                         return null;
                                                     }
                                                 });
-                                            /*} else {
+                                            } else {
                                                 console.log(res.message);
                                                 toggleLoadingScreenOverlay();
                                             }
@@ -129,7 +137,7 @@ function handleUpload() {
                                             console.log(ajaxOptions);
                                             console.log(thrownError);
                                         }
-                                    });*/
+                                    });
 
                                 }
                                 else {
@@ -161,265 +169,27 @@ function handleUpload() {
         }
     });
 
-    function toggleLoadingScreenOverlay() {
-        if ($('#cover-spin').is(':visible')){
-            $('#cover-spin').hide();
-        } else {
-            $('#cover-spin').show();
-        }
-    }
-
-
-    // Get the user UUID from the email
-    /*$.get(`${classify_root}/users/getUserFromEmail?email=${email}`, function(data, status) {
-        const user_uuid = data.user_id;
-
-        // Create form data object
-        var form_data = new FormData();
-
-        // Create a Blob from the parsed CSV string
-        const csvBlob = new Blob([parsed], { type: 'text/csv' });
-
-        // Define or fallback to a default filename
-        var currentFile = filename; // Fallback if filename is not defined
-
-        // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
-        currentFile = currentFile.endsWith('.csv') ? currentFile : currentFile + '.csv';
-
-        // Append the Blob and other fields to the form data
-        form_data.append('file', csvBlob, currentFile);
-        form_data.append('user_uuid', user_uuid);
-
-        $.ajax({
-            url: s3_url,
-            type: 'POST',
-            data: form_data,
-            processData: false,  // Don't process the files
-            contentType: false,  // Let jQuery set the content type
-            success: function (response) {
-                const response_div = document.getElementById('upload-result');
-
-                if (response.success) {
-                    console.log('File successfully uploaded to s3.', response);
-                    console.log(response.data_types);
-                    $('#columnsModal').modal('show');
-                    showColumns(response.data_types);
-                    $('#submit-to-automl').click(function() {
-                        if(confirm("Are you sure you want to submit this data for processing?")){
-                            $('#spinner').show();
-                            //let form = $('#column_names').serializeArray();
-                            let form = [];
-                            $('.form-check-input').each(function(index, element) {
-                                if (element.id !== 'class') {
-                                    if ($(element).attr('type') == 'checkbox') {
-                                        if ($(element).is(':checked')) {
-                                            let checked_type = document.querySelector('input[name="'+element.id+'"]:checked').id;
-                                            let type = checked_type.substring(checked_type.lastIndexOf('-')+1);
-                                            form.push({column:element.id, data_type:type, checked:true})
-                                        } else {
-                                            form.push({column:element.id, data_type:'none', checked:false}) //If dropped column, update actions
-                                            $.ajax({
-                                                url: '${classify_root}/actions/update_action',
-                                                method: 'POST',
-                                                data: {
-                                                    'filename': currentFile,
-                                                    'user_uuid': user_uuid,
-                                                    'action': 'Dropped column '+element.id
-                                                },
-                                                crossDomain: true,
-                                                success: function(res) {
-                                                },
-                                                error: function(xhr, ajaxOptions, thrownError) {
-                                                    console.log('Error communicating with the server');
-                                                }
-                                            });
-                                        }
-
-                                    }
-                                }
-                            });
-                            if (currentFile !== null) {
-                                $.ajax({
-                                    url: change_columns,
-                                    type: 'POST',
-                                    data: JSON.stringify({
-                                        'filename': currentFile.replace('.csv', `_${user_uuid}.csv`),
-                                        'data_types': JSON.stringify(form)
-                                    }),
-                                    contentType: 'application/json; charset=utf-8',
-                                    success: function(data) {
-                                        if (data.success == false) {
-                                            $('#spinner').hide();
-                                            //console.log(data.message);
-                                            return null;
-                                        }
-                                        else {
-                                            console.log(data.message);
-                                            $('#gotoMLOpts').show();
-                                            $('#submit-to-automl').hide();
-                                            //uploaded_to_clearml=true;
-                                            $('#spinner').hide();
-                                            // Send the form data via a POST request
-                                            $.ajax({
-                                                url: upload_url,
-                                                type: 'POST',
-                                                data: form_data,
-                                                processData: false,  // Don't process the files
-                                                contentType: false,  // Let jQuery set the content type
-                                                success: function(response) {
-                                                    const response_div = document.getElementById('upload-result');
-
-                                                    if (response.success) {
-                                                        console.log('File successfully uploaded', response);
-                                                    }
-                                                    else {
-                                                        console.log(response.message);
-                                                    }
-
-                                                },
-                                                error: function(jqXHR, textStatus, errorThrown) {
-                                                    console.error('Error uploading file:', textStatus, errorThrown);
-                                                }
-                                            });
-                                        }
-
-                                    },
-                                    error: function (xhr, status, error) {
-                                        console.log("Error communicating with the server.");
-                                        return null;
-                                    }
-                                });
-
-                            } else {
-                                console.log("Please upload a file first.");
-                            }
-                        }
-                    });
-                } else {
-                    console.log('Error uploading file to s3.', response);
+    function showColumns(data_types, missing_values) {
+        let toAppendBool = "";
+        let toggle = 0;
+        Object.keys(data_types).forEach((column) => {
+            column_name = column.replace(/^\w/, c => c.toUpperCase());
+            if (column == 'class') {
+                toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
+                if (toggle == 1) {
+                    toAppendBool += ' background-color: #DDDDDD;'
                 }
-
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                console.error('Error uploading file:', textStatus, errorThrown);
-            }
-        });
-    });*/
-}
-
-/*function showColumns(data_types) {
-    let toAppendBool = "";
-    let toggle = 0;
-    Object.keys(data_types).forEach((column) => {
-        column_name = column.replace(/^\w/, c => c.toUpperCase());
-        if (column == 'class') {
-            toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
-            if (toggle == 1) {
-                toAppendBool += ' background-color: #DDDDDD;'
-            }
-            toAppendBool += `">
+                toAppendBool += `">
 
                                         <input id="${column}" type="checkbox" class="form-check-input" checked disabled>
                                         <label for="${column}" class="bold-label">${column_name}</label>
                                     </div>`;
-        } else {
-            toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
-            if (toggle == 1) {
-                toAppendBool += ' background-color: #DDDDDD;'
-            }
-            toAppendBool += `">
-                                        <input id="${column}" type="checkbox" class="form-check-input" checked>
-                                        <label for="${column}" class="bold-label">${column_name}</label>
-                                        <div class="row">
-                                            <div class="col-md-1">
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-check-label mb-3" title="integer">
-                                                    <input id="${column}-integer" name="${column}" type="radio" class="form-check-input"`
-            if (data_types[column] == 'integer') {
-                toAppendBool += ' checked'
-            }
-            toAppendBool += `>Integer
-                                                </label>
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label class="form-check-label mb-3" title="float">
-                                                    <input id="${column}-float" name="${column}" type="radio" class="form-check-input"`
-            if (data_types[column] == 'float') {
-                toAppendBool += ' checked'
-            }
-            toAppendBool += `>Float
-                                                </label>
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label class="form-check-label mb-3" title="bool">
-                                                    <input id="${column}-bool" name="${column}" type="radio" class="form-check-input"`
-            if (data_types[column] == 'bool') {
-                toAppendBool += ' checked'
-            }
-            toAppendBool += `>Bool
-                                                </label>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-check-label mb-3" title="categorical">
-                                                    <input id="${column}-categorical" name="${column}" type="radio" class="form-check-input"`
-            if (data_types[column] == 'string') {
-                toAppendBool += ' checked'
-            }
-            toAppendBool += `>Categorical
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>`;
-        }
-        if (toggle == 0) {
-            toggle = 1;
-        } else {
-            toggle = 0;
-        }
-    });
-    $('#columnsModal #column_names').append(toAppendBool);
-    var modal = document.getElementById('columnsModal');
-    var modal_checkboxes = modal.querySelectorAll("input[type='checkbox']")
-
-    modal_checkboxes.forEach(function (checkbox) {
-        checkbox.addEventListener('click', function () {
-            if (!this.checked) {
-                var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
-                radios.forEach(function (radio) {
-                    radio.disabled = true;
-                });
             } else {
-                var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
-                radios.forEach(function (radio) {
-                    radio.disabled = false;
-                });
-            }
-        });
-    });
-}*/
-
-function showColumns(data_types, missing_values) {
-    let toAppendBool = "";
-    let toggle = 0;
-    Object.keys(data_types).forEach((column) => {
-        column_name = column.replace(/^\w/, c => c.toUpperCase());
-        if (column == 'class') {
-            toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
-            if (toggle == 1) {
-                toAppendBool += ' background-color: #DDDDDD;'
-            }
-            toAppendBool += `">
-
-                                        <input id="${column}" type="checkbox" class="form-check-input" checked disabled>
-                                        <label for="${column}" class="bold-label">${column_name}</label>
-                                    </div>`;
-        } else {
-            toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
-            if (toggle == 1) {
-                toAppendBool += ' background-color: #DDDDDD;'
-            }
-            toAppendBool += `">
+                toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
+                if (toggle == 1) {
+                    toAppendBool += ' background-color: #DDDDDD;'
+                }
+                toAppendBool += `">
                                         <input id="${column}" type="checkbox" class="form-check-input" checked>
                                         <label for="${column}" class="bold-label">${column_name}</label>
                                         <div class="row">
@@ -428,42 +198,42 @@ function showColumns(data_types, missing_values) {
                                             <div class="col-md-3">
                                                 <label class="form-check-label mb-3" title="integer">
                                                     <input id="${column}-integer" name="${column}" type="radio" class="form-check-input"`
-            if (data_types[column]=='integer') {
-                toAppendBool += ' checked'
-            }
-            toAppendBool += `>Integer
+                if (data_types[column] == 'integer') {
+                    toAppendBool += ' checked'
+                }
+                toAppendBool += `>Integer
                                                 </label>
                                             </div>
                                             <div class="col-md-2">
                                                 <label class="form-check-label mb-3" title="float">
                                                     <input id="${column}-float" name="${column}" type="radio" class="form-check-input"`
-            if (data_types[column]=='float') {
-                toAppendBool += ' checked'
-            }
-            toAppendBool += `>Float
+                if (data_types[column] == 'float') {
+                    toAppendBool += ' checked'
+                }
+                toAppendBool += `>Float
                                                 </label>
                                             </div>
                                             <div class="col-md-2">
                                                 <label class="form-check-label mb-3" title="bool">
                                                     <input id="${column}-bool" name="${column}" type="radio" class="form-check-input"`
-            if (data_types[column]=='bool') {
-                toAppendBool += ' checked'
-            }
-            toAppendBool += `>Bool
+                if (data_types[column] == 'bool') {
+                    toAppendBool += ' checked'
+                }
+                toAppendBool += `>Bool
                                                 </label>
                                             </div>
                                             <div class="col-md-3">
                                                 <label class="form-check-label mb-3" title="categorical">
                                                     <input id="${column}-categorical" name="${column}" type="radio" class="form-check-input"`
-            if (data_types[column]=='string') {
-                toAppendBool += ' checked'
-            }
-            toAppendBool += `>Categorical
+                if (data_types[column] == 'string') {
+                    toAppendBool += ' checked'
+                }
+                toAppendBool += `>Categorical
                                                 </label>
                                             </div>
                                         </div>`
-            if (missing_values[column]) {
-                toAppendBool += `<div class="row"><div class="col-md-5">
+                if (missing_values[column]) {
+                    toAppendBool += `<div class="row"><div class="col-md-5">
                                         <p>Contains missing values.<\p></div><div class="col-md-4">
                                         <select id="${column}-missing-values" class="selectpicker" style="display:block !important;">
                                             <option value="drop">Drop Missing Rows</option>
@@ -471,53 +241,190 @@ function showColumns(data_types, missing_values) {
                                             <option value="synthetic">Synthetically Fill</option>
                                         </select></div>
                                         <div class="col-md-1"><input type="text" id="${column}-fill-value" value="0" size="6" hidden></div></div>`;
-            }
-            toAppendBool += `</div>`;
-        }
-        if (toggle == 0) {
-            toggle = 1;
-        }
-        else {
-            toggle = 0;
-        }
-    });
-    $('#columnsModal #column_names').append(toAppendBool);
-    var modal = document.getElementById('columnsModal');
-    var modal_checkboxes = modal.querySelectorAll("input[type='checkbox']")
-    var missing_dropdowns = modal.querySelectorAll("select");
-
-    modal_checkboxes.forEach(function(checkbox) {
-        checkbox.addEventListener('click', function() {
-            if (!this.checked) {
-                var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
-                radios.forEach(function(radio) {
-                    radio.disabled = true;
-                });
-            } else {
-                var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
-                radios.forEach(function(radio) {
-                    radio.disabled = false;
-                });
-            }
-        });
-    });
-
-    missing_dropdowns.forEach(function(dropdown) {
-        dropdown.addEventListener('change', function(event) {
-            let select_id = event.target.id.slice(0, -15);
-            let text_id = select_id + '-fill-value'
-            if (event.target.value === 'constant') {
-                if (document.getElementById(select_id+'-categorical').checked) { //Change default value for categorical variables
-                    document.getElementById(text_id).value = 'Unknown';
-                } else {
-                    document.getElementById(text_id).value = '0';
                 }
-                document.getElementById(text_id).removeAttribute('hidden');
+                toAppendBool += `</div>`;
+            }
+            if (toggle == 0) {
+                toggle = 1;
             } else {
-                document.getElementById(text_id).setAttribute('hidden', true);
+                toggle = 0;
             }
         });
-    });
+        $('#columnsModal #column_names').append(toAppendBool);
+        var modal = document.getElementById('columnsModal');
+        var modal_checkboxes = modal.querySelectorAll("input[type='checkbox']")
+        var missing_dropdowns = modal.querySelectorAll("select");
+
+        modal_checkboxes.forEach(function (checkbox) {
+            checkbox.addEventListener('click', function () {
+                if (!this.checked) {
+                    var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
+                    radios.forEach(function (radio) {
+                        radio.disabled = true;
+                    });
+                } else {
+                    var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
+                    radios.forEach(function (radio) {
+                        radio.disabled = false;
+                    });
+                }
+            });
+        });
+
+        missing_dropdowns.forEach(function (dropdown) {
+            dropdown.addEventListener('change', function (event) {
+                let select_id = event.target.id.slice(0, -15);
+                let text_id = select_id + '-fill-value'
+                if (event.target.value === 'constant') {
+                    if (document.getElementById(select_id + '-categorical').checked) { //Change default value for categorical variables
+                        document.getElementById(text_id).value = 'Unknown';
+                    } else {
+                        document.getElementById(text_id).value = '0';
+                    }
+                    document.getElementById(text_id).removeAttribute('hidden');
+                } else {
+                    document.getElementById(text_id).setAttribute('hidden', true);
+                }
+            });
+        });
+
+        $('#submit-to-automl').click(function () {
+            if (confirm("Are you sure you want to submit this data for processing?")) {
+                toggleLoadingScreenOverlay()
+                let error = 0;
+                //let form = $('#column_names').serializeArray();
+                let form = [];
+                $('.form-check-input').each(function (index, element) {
+                    if (element.id !== 'class') {
+                        if ($(element).attr('type') === 'checkbox') {
+                            if ($(element).is(':checked')) {
+                                let checked_type = document.querySelector('input[name="' + element.id + '"]:checked').id;
+                                let type = checked_type.substring(checked_type.lastIndexOf('-') + 1);
+                                if (document.getElementById(element.id + '-missing-values')) { //If there's missing values to deal with
+                                    let fill_method = document.getElementById(element.id + '-missing-values').value;
+                                    let fill_value = null;
+                                    if (fill_method === 'constant') {
+                                        fill_value = document.getElementById(element.id + '-fill-value').value;
+                                        if (type === 'integer') {
+                                            if (Number.isInteger(Number(fill_value))) {
+                                                fill_value = Number(fill_value);
+                                            } else {
+                                                alert('Fill value for column ' + element.id + ' not valid for type integer.');
+                                                error = 1;
+                                                return;
+                                            }
+                                        } else if (type === 'float') {
+                                            if (!isNaN(Number(fill_value)) && (Number.isFinite(Number(fill_value)))) {
+                                                fill_value = Number(fill_value);
+                                            } else {
+                                                alert('Fill value for column ' + element.id + ' not valid for type float.');
+                                                error = 1;
+                                                return;
+                                            }
+                                        } else if (type === 'bool') {
+                                            if (fill_value === 'true' || fill_value === '1' || fill_value === 'True' || fill_value === 'TRUE') {
+                                                fill_value = 1;
+                                            } else if (fill_value === 'false' || fill_value === '0' || fill_value === 'False' || fill_value === 'FALSE') {
+                                                fill_value = 0;
+                                            } else {
+                                                alert('Fill value for column ' + element.id + ' not valid for type bool.');
+                                                error = 1;
+                                                return;
+                                            }
+                                        } //Don't need to check categorical type, because any entry would be valid for string
+                                    }
+                                    form.push({
+                                        column: element.id,
+                                        data_type: type,
+                                        checked: true,
+                                        missing: fill_method,
+                                        fill_value: fill_value
+                                    })
+                                } else {
+                                    form.push({
+                                        column: element.id,
+                                        data_type: type,
+                                        checked: true,
+                                        missing: null,
+                                        fill_value: null
+                                    })
+                                }
+                            } else {
+                                form.push({column: element.id, data_type: 'none', checked: false}) //If dropped column, update actions
+                            }
+
+                        }
+                    }
+                });
+                if (error === 1) {
+                    toggleLoadingScreenOverlay()
+                    return null;
+                } else if (currentFile !== null) {
+                    console.log(currentFileUUID);
+                    $.ajax({
+                        url: `${classify_api}/change_column_types`,
+                        type: 'POST',
+                        data: JSON.stringify({
+                            'filename': currentFileUUID,
+                            'data_types': JSON.stringify(form)
+                        }),
+                        contentType: 'application/json; charset=utf-8',
+                        success: function (data) {
+                            console.log(form);
+                            console.log(data);
+                            if (data.success == false) {
+                                toggleLoadingScreenOverlay()
+                                alert(data.message);
+                                return null;
+                            } else {
+                                console.log('right before set-column_changes')
+                                $.ajax({ //Update table with column changes so they can be applied to test set if necessary
+                                    url: `${classify_root}/reports/set-column_changes`,
+                                    type: 'POST',
+                                    data: {
+                                        'filename': currentFileUUID,
+                                        'column_changes': JSON.stringify(form)
+                                    },
+                                    success: function (data) {
+                                        if (data.success == false) {
+                                            toggleLoadingScreenOverlay()
+                                            alert(data.message);
+                                            return null;
+                                        } else {
+                                            alert(data.message);
+                                            $('#gotoMLOpts').show();
+                                            $('#submit-to-automl').hide();
+                                            uploaded_to_clearml = true;
+                                            toggleLoadingScreenOverlay()
+                                        }
+
+                                    },
+                                    error: function (xhr, status, error) {
+                                        toggleLoadingScreenOverlay()
+                                        alert("Error communicating with the server.");
+                                        return null;
+                                    }
+                                });
+                            }
+
+                        },
+                        error: function (xhr, status, error) {
+                            toggleLoadingScreenOverlay()
+                            console.log(xhr);
+                            console.log(status);
+                            console.log(error);
+                            alert("Error communicating with the server.");
+                            return null;
+                        }
+                    });
+
+                } else {
+                    toggleLoadingScreenOverlay()
+                    alert("Please upload a file first.");
+                }
+            }
+        });
+    }
 }
 
 function checkEmail() {
@@ -578,7 +485,76 @@ function parseCSVWithNewNames(csvString, classifierField) {
     return [headers.join(','), ...updatedRows.map(row => row.join(','))].join('\n');
 }
 
+function toggleLoadingScreenOverlay() {
+    if ($('#cover-spin').is(':visible')){
+        $('#cover-spin').hide();
+    } else {
+        $('#cover-spin').show();
+    }
+}
 
 function classifyRedirect() {
     window.open(`${classify_root}/result`, "_blank");
+}
+
+function close_modal() {
+    $('#columnsModal').modal('hide');
+
+    if (!uploaded_to_clearml) {
+        $.ajax({
+            url: `${classify_root}/reports/delete`,
+            type: 'POST',
+            data: {
+                'uuid': reportUUID,
+                'filename': filename
+            },
+            success: function(data) {
+                $.ajax({
+                    url: `${classify_api}/delete_dataset`,
+                    type: 'POST',
+                    data: JSON.stringify({
+                        'filename': filename,
+                        'uuid': userUUID
+                    }),
+                    contentType: 'application/json; charset=utf-8',
+                    success: function(data) {
+                        if (data.success) {
+                            $.ajax({
+                                url: `${classify_root}/actions/update_action`,
+                                method: 'POST',
+                                data: {
+                                    'report_uuid': reportUUID,
+                                    'user_uuid': userUUID,
+                                    'action': 'Deleted report',
+                                    'session_id': 'REDCap Upload',
+                                    'api_key': '7217be72-156e-4bda-9798-d7d6c8fc59da'
+                                },
+                                success: function(res) {
+                                    if (res.success) {
+                                        $('#collection').DataTable().ajax.reload();
+                                    } else {
+                                        console.log(res.message);
+                                    }
+                                },
+                                error: function(xhr, ajaxOptions, thrownError) {
+                                    console.log('Error communicating with the server');
+                                }
+                            });
+                        } else {
+                            console.log(data.message);
+                        }
+
+                    },
+                    error: function (xhr, status, error) {
+                        console.log("Error communicating with the server.");
+                        return null;
+                    }
+                });
+            },
+            error: function (xhr, status, error) {
+                console.log("Error communicating with the server.");
+                return null;
+            }
+        });
+    }
 }
