@@ -40,6 +40,14 @@ class CLASSifyConnect extends AbstractExternalModule {
 
     }
 
+    private static function isCLASSifyPage() {
+        $page = isset($_SERVER['PHP_SELF']) ? $_SERVER['PHP_SELF'] : "";
+        if (preg_match("/ExternalModules\/?", $page)) {
+            return TRUE;
+        }
+        return FALSE;
+    }
+
     function redcap_every_page_top($project_id) {
         if (self::isExternalModulePage()) {
             $project_id = $_GET['pid']; // or however you're getting the project ID

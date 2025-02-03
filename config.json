@@ -62,5 +62,18 @@
                 }
             ]
         }
+    ],
+    "links": {
+        "project": [
+            {
+                "name": "CLASSify Connection",
+                "icon": "fas fa-message",
+                "url": "CLASSifyConnectPage.php",
+                "show-header-and-footer": true
+            }
+        ]
+    },
+    "no-auth-pages": [
+        "classify-connection"
     ]
 }
