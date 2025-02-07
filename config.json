@@ -68,7 +68,13 @@
             {
                 "name": "CLASSify Connection",
                 "icon": "fas fa-message",
-                "url": "CLASSifyConnectPage.php",
+                "url": "pages/CLASSifyConnectPage.php",
+                "show-header-and-footer": true
+            },
+            {
+                "name": "CLASSify Visualizations",
+                "icon": "fas fa-message",
+                "url": "pages/CLASSifyVisualizations.php",
                 "show-header-and-footer": true
             }
         ]
