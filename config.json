@@ -66,10 +66,22 @@
     "links": {
         "project": [
             {
-                "name": "CLASSify Connection",
-                "icon": "fas fa-message",
+                "name": "CLASSify Upload",
+                "icon": "fas fa-upload",
                 "url": "CLASSifyConnectPage.php",
                 "show-header-and-footer": true
+            },
+            {
+                "name": "CLASSify Results",
+                "icon": "fas fa-file-lines",
+                "url": "results.php",
+                "show-header-and-footer": true
+            },
+            {
+                "name": "unauthorized",
+                "icon": "fas fa-message",
+                "url": "unauthorized.php",
+                "show-header-and-footer": false
             }
         ]
     },

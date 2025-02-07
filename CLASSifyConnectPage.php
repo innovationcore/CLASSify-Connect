@@ -1,9 +1,641 @@
 <?php
+$rootURL = "https://data.ai.uky.edu/classify";
+$apiURL = "https://data.ai.uky.edu/classify/api";
 $page = 'home';
-include_once __DIR__ . '/_header.php';
 global $rootURL;
-global $api_url;
+echo "ROOT: " . $rootURL;
+global $apiURL;
+echo "API: " . $apiURL;
 ?>
+
+<style>
+    html { height: 100%; }
+
+body { min-height: 100%; }
+
+#login-user {
+    color: white;
+}
+
+#user-guide {
+    color: white;
+}
+
+.admin-item {
+    display: none !important;
+}
+
+.display-text {
+    font-size: 1rem;
+}
+
+.screenshot-container {
+    text-align: center; /* Centers the image horizontally */
+}
+
+.image-helper img {
+    width: 60vw;
+}
+
+.responsive-text {
+    font-size: .7rem;
+}
+
+@media (min-width: 576px) {
+    .display-text {
+        font-size: 1.2rem;
+    }
+
+    .responsive-text {
+        font-size: .75rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .display-text {
+        font-size: 1.3rem;
+    }
+
+    .responsive-text {
+        font-size: .8rem;
+    }
+}
+
+@media (min-width: 992px) {
+    .display-text {
+        font-size: 1.4rem;
+    }
+
+    .responsive-text {
+        font-size: .9rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .display-text {
+        font-size: 1.5rem;
+    }
+
+    .responsive-text {
+        font-size: 1rem;
+    }
+}
+
+/* Tooltip container */
+#tooltip {
+    visibility: hidden;
+    width: 250px;
+    background-color: black;
+    color: #fff;
+    padding: 6px;
+    border-radius: 6px;
+
+    /* Position the tooltip text - see examples below! */
+    position: absolute;
+    z-index: 5000;
+}
+
+/*
+ * Fixes
+ */
+.btn-group-xs > .btn, .btn-xs {
+  padding: .25rem .4rem;
+  font-size: .875rem;
+  line-height: .5;
+  border-radius: .2rem;
+}
+
+table.dataTable tbody td {
+    vertical-align: middle;
+}
+
+.cell-middle tbody td {
+    vertical-align: middle !important;
+}
+
+.filled,
+.filledKey {
+    fill: #8888ff !important;
+}
+
+.found,
+.foundKey,
+.new,
+.newKey,
+.onShelf,
+.changeShelfSelected {
+    fill: coral !important;
+}
+
+
+.selected,
+.selectedKey {
+    fill: #cb0101 !important;
+    stroke-width: 2px;
+}
+
+#ColorKey {
+    max-height: 75px;
+}
+
+html,
+body {
+    height: 100%;
+    padding-top: 36px;
+}
+
+.container-fluid,
+main {
+    height: calc(100vh - 72px);
+}
+
+body {
+    font-size: .875rem;
+}
+
+nav {
+    background-color: #1a48aa;
+}
+
+.navbar {
+    background-color: #1a48aa;
+    position: fixed;
+    width: 100%;
+}
+
+.feather {
+    width: 16px;
+    height: 16px;
+    vertical-align: text-bottom;
+}
+
+aside {
+    /* padding-top: 72px; */
+}
+
+@media (min-width: 768px) {
+    .navbar-collapse {
+        flex-grow: 0;
+    }
+}
+
+/*
+ * Sidebar
+ */
+
+.sidebar {
+    position: fixed;
+    top: 72px;
+    bottom: calc(100vh - 72px);
+    z-index: 100; /* Behind the navbar */
+    padding: 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar-menu {
+    position: fixed;
+    top: 72px;
+    bottom: calc(100vh - 72px);
+    z-index: 100; /* Behind the navbar */
+}
+
+.sidebar ul {
+    justify-content: space-between !important;
+}
+
+.sidebar ul li a {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+@media (min-width: 768px) {
+    .sidebar ul {
+        justify-content: flex-start !important;
+    }
+}
+
+.sidebar-sticky {
+    position: fixed;
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    z-index: 999;
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    color: #333;
+}
+
+.sidebar .nav-link i {
+    min-width: 18px;
+    text-align: center;
+}
+
+.sidebar .nav-link.active {
+    color: #007bff !important;
+}
+
+.sidebar .nav-link:hover .feather,
+.sidebar .nav-link.active .feather {
+    color: inherit;
+}
+
+.sidebar-heading {
+    font-size: .75rem;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+/*
+ * Navbar
+ */
+
+.navbar {
+    height: 72px;
+}
+
+.navbar-short {
+    height: 100%;
+    /* padding-top: 72px; */
+}
+
+.navbar-brand {
+    margin-left: .25rem;
+    padding-top: .2rem;
+    padding-bottom: .2rem;
+    padding-left: .5rem;
+    padding-right: .75rem;
+    font-size: 1.15rem;
+    border-radius: 5px;
+    min-width: 210px;
+    background-image: url(../img/UKHCLogo.svg);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: rgba(26, 72, 170, 0.75);
+    background-blend-mode: lighten;
+    text-align: center;
+    text-shadow: 1px 1px #07132c;
+}
+
+.navbar .form-control {
+    padding: .75rem 1rem;
+    border-width: 0;
+    border-radius: 0;
+}
+
+.form-control-dark {
+    color: #fff;
+    background-color: rgba(255, 255, 255, .1);
+    border-color: rgba(255, 255, 255, .1);
+}
+
+.form-control-dark:focus {
+    border-color: transparent;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, .25);
+}
+
+.nav-item a{
+    color: #716f6f !important;
+}
+
+@media screen and (min-width: 768px) {
+    .nav-item {
+        margin-left: 10px;
+    }
+}
+
+.columns-div {
+    overflow-y: scroll;
+    height: 400px;
+    border-top: 0.1rem solid;
+}
+
+.bold-label {
+    font-weight: bold;
+}
+
+.instruction-panel {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 102%;
+    right: -120%;
+    padding: 20px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 9999; /* Ensure the panel is above other content */
+}
+
+/*
+ * Utilities
+ */
+
+.border-top { border-top: 1px solid #e5e5e5; }
+.border-bottom { border-bottom: 1px solid #e5e5e5; }
+.border-top-param { border-top: 3px solid #007bff;}
+
+/*
+ *  DataTables modifications
+ */
+th.dt-center, td.dt-center { text-align: center; }
+div.dataTables_info {
+    padding-left: .5em;
+    padding-top: 0.3em !important;
+}
+
+/*
+ *  Fixes
+ */
+.modal { overflow: auto !important; }
+
+/*
+ *  Collapsable Cards
+ */
+.card-header .fa {
+    transition: .3s transform ease-in-out;
+}
+
+a.collapsed, a.d-block,
+a.collapsed:hover, a.d-block:hover,
+a.collapsed:visited, a.d-block:visited {
+    color: black;
+    text-decoration: none;
+}
+
+/*
+ *  Components
+ */
+
+#components {
+    margin-top: 0;
+}
+
+@media screen and (min-width: 768px) {
+    #components {
+        margin-top: 0;
+    }
+}
+
+/*
+ *  ScrollNav
+ */
+
+#scroll-nav {
+    display: none;
+    padding: 0 0 0 10px;
+    margin: 0;
+}
+
+#scroll-nav-todo-header {
+    position: fixed;
+    top: 132px;
+}
+
+.scroll-nav-todo {
+    position: fixed;
+    background-color: #f8f9fa;
+    border: 1px solid #343a40!important;
+    border-radius: 5px;
+    padding: 5px;
+    margin-top: 20px;
+    max-height: calc(50vh - 85px);
+    overflow-y: scroll;
+    width: 100%;
+}
+
+#scroll-nav-components-header {
+    position: fixed;
+}
+
+.scroll-nav-components {
+    position: fixed;
+    background-color: #f8f9fa;
+    border: 1px solid #343a40!important;
+    border-radius: 5px;
+    padding: 5px;
+    overflow-y: scroll;
+    width: 100%;
+}
+
+@media screen and (min-width: 576px) {
+    #scroll-nav {
+        display: block;
+    }
+
+    #scroll-nav-todo-header {
+        top: 122px;
+    }
+
+    .scroll-nav-todo {
+        float: left;
+        max-height: calc(50vh - 100px);
+        width: 25%;
+    }
+
+    #scroll-nav-components-header {
+        top: calc(50vh + 60px);
+    }
+
+    .scroll-nav-components {
+        float: left;
+        top: calc(50vh + 90px);
+        max-height: calc(50vh - 100px);
+        width: 25%;
+     }
+}
+
+@media screen and (min-width: 768px) {
+    #scroll-nav-todo-header {
+        top: 85px;
+    }
+
+    .scroll-nav-todo {
+        max-height: calc(50vh - 80px);
+        width: 20%;
+    }
+
+    #scroll-nav-components-header {
+        top: calc(50vh + 40px);
+    }
+
+    .scroll-nav-components {
+        top: calc(50vh + 70px);
+        max-height: calc(50vh - 80px);
+        width: 20%;
+    }
+}
+
+.scroll-nav-components__list,
+.scroll-nav-todo__list {
+    margin: 0;
+    padding-left: 1.4em;
+    list-style-type: none;
+}
+
+.scroll-nav-components__item,
+.scroll-nav-todo__item {
+    margin-bottom: 5px;
+}
+
+.scroll-nav-components__item--active,
+.scroll-nav-todo__item--active{
+    font-weight: 600;
+    position: relative;
+}
+.scroll-nav-components__item--active:before,
+.scroll-nav-todo__item--active:before {
+    content: '';
+    display: block;
+    width: 14px;
+    height: 14px;
+    background: black;
+    position: absolute;
+    left: -20px;
+    top: 2px;
+}
+
+.scroll-nav-components__link,
+.scroll-nav-todo__link{
+    color: #0645ad;
+    text-decoration: none;
+}
+
+#cover-spin {
+    position:fixed;
+    width:100%;
+    left:0;right:0;top:0;bottom:0;
+    background-color: rgba(255,255,255,0.7);
+    z-index:99999999999;
+    display:none;
+}
+
+@-webkit-keyframes spin {
+	from {-webkit-transform:rotate(0deg);}
+	to {-webkit-transform:rotate(360deg);}
+}
+
+@keyframes spin {
+	from {transform:rotate(0deg);}
+	to {transform:rotate(360deg);}
+}
+
+#cover-spin::after {
+    content:'';
+    display:block;
+    position:absolute;
+    left:48%;top:40%;
+    width:40px;height:40px;
+    border-style:solid;
+    border-color:black;
+    border-top-color:transparent;
+    border-width: 4px;
+    border-radius:50%;
+    -webkit-animation: spin .8s linear infinite;
+    animation: spin .8s linear infinite;
+}
+
+.selection-btns {
+    margin: 0 10% 0 10%;
+}
+
+.selection-btns a {
+    text-decoration: none;
+}
+
+.center-home-sects {
+    text-align:center;
+    border-radius: 5%;
+    padding: 5% 0 5% 0;
+    margin:0;
+    color: #606060;
+    -webkit-transition: background-color 100ms linear;
+    -ms-transition: background-color 100ms linear;
+    transition: background-color 100ms linear;
+}
+
+.center-home-sects:hover {
+    color: #fff;
+    background-color: #606060;
+}
+
+.center-home-sects:hover span{
+    color: #fff;
+}
+
+.center-home-sects span {
+    font-size: 10vw;
+    color: #606060;
+    -webkit-transition: background-color 100ms linear;
+    -ms-transition: background-color 100ms linear;
+    transition: background-color 100ms linear;
+}
+
+.slideshow-container {
+  max-width: 1000px;
+  position: relative;
+  margin: auto;
+}
+
+/* Hide the images by default */
+.slideshow-slide {
+  display: none;
+}
+
+/* Next & previous buttons */
+.prev_viz, .next_viz {
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  width: auto;
+  margin-top: -22px;
+  padding: 16px;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+  transition: 0.6s ease;
+  border-radius: 0 3px 3px 0;
+  user-select: none;
+}
+
+/* Position the "next button" to the right */
+.next_viz {
+  right: -5%;
+  border-radius: 3px 0 0 3px;
+}
+
+.prev_viz {
+  left: -5%;
+  border-radius: 3px 0 0 3px;
+}
+
+/* On hover, add a black background color with a little bit see-through */
+.prev_viz:hover, .next_viz:hover {
+  background-color: rgba(0,0,0,0.8);
+}
+
+/*.dot {*/
+/*  cursor: pointer;*/
+/*  height: 15px;*/
+/*  width: 15px;*/
+/*  margin: 0 2px;*/
+/*  background-color: #bbb;*/
+/*  border-radius: 50%;*/
+/*  display: inline-block;*/
+/*  transition: background-color 0.6s ease;*/
+/*}*/
+
+/*.active, .dot:hover {*/
+/*  background-color: #717171;*/
+/*}*/
+
+</style>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <main role="main" class="col-12 col-md-11 bg-faded py-3 flex-grow-1">
+
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
         <h1 class="h4">Data - <span class="text-muted">Upload</span></h1>
     </div>
@@ -133,7 +765,9 @@ global $api_url;
     </div>
     <div id="cover-spin"></div>
 
+
     <script type="text/javascript">
+        const email = <?= json_encode($this->getProjectSetting('classify-email')) ?>;
         var collection = {};
         var collectionTable = $('#collection');
         var collectionDataTable = null;
@@ -148,7 +782,7 @@ global $api_url;
 
         $('#uploadModal').on('shown.bs.modal', function () {
             $.ajax({
-                url: '<?= $rootURL ?>/users/getUser',
+                url: `<?= $rootURL ?>/users/getUserFromEmail?email=${email}`,
                 method: 'get',
                 success: function(data) {
                     if (!data.user.accepted_terms) { //If user has not accepted terms yet, show modal
@@ -186,7 +820,7 @@ global $api_url;
             if (!uploaded_to_clearml) {
                 let filename_no_uuid = currentFile.substring(0, currentFile.lastIndexOf('_')) + currentFile.substring(currentFile.lastIndexOf('.'));
                 $.ajax({ //Delete report to prevent clearml dataset error
-                    url: '<?= $rootURL ?>/reports/delete',
+                    url: `<?= $rootURL ?>/reports/delete`,
                     type: 'POST',
                     data: {
                         'uuid': report_uuid,
@@ -195,12 +829,12 @@ global $api_url;
                     success: function(data) {
                         let user_uuid = null;
                         $.ajax({
-                            url: '<?= $rootURL?>/users/getUser',
+                            url: `<?= $rootURL?>/users/getUser`,
                             method: 'get',
                             success: function(data) {
                                 user_uuid = data.user.id;
                                 $.ajax({
-                                    url: '<?= $api_url ?>/delete_dataset',
+                                    url: `<?= $apiURL ?>/delete_dataset`,
                                     type: 'POST',
                                     data: JSON.stringify({
                                         'filename': filename_no_uuid,
@@ -210,7 +844,7 @@ global $api_url;
                                     success: function(data) {
                                         if (data.success){
                                             $.ajax({
-                                                url: '<?= $rootURL ?>/actions/update_action',
+                                                url: `<?= $rootURL ?>/actions/update_action`,
                                                 method: 'POST',
                                                 data: {
                                                     'report_uuid': report_uuid,
@@ -298,7 +932,7 @@ global $api_url;
                     currentFile = currentFile.replace('.csv', '_'+user_uuid+'.csv');
                     // form_data.append('filename', currentFile);
                     $.ajax({
-                        url: '<?= $api_url ?>/verify_dataset',
+                        url: `<?= $apiURL ?>/verify_dataset`,
                         type: 'POST',
                         data: form_data,
                         contentType: false,
@@ -306,7 +940,7 @@ global $api_url;
                         success: function(data) {
                             if (data.success) {
                                 $.ajax({
-                                    url: '<?= $rootURL ?>/reports/submit',
+                                    url: `<?= $rootURL ?>/reports/submit`,
                                     method: 'post',
                                     dataType: 'json',
                                     data: form_data,
@@ -317,7 +951,7 @@ global $api_url;
                                             report_uuid = res.report_uuid;
                                             filename = res.file_name;
                                             $.ajax({
-                                                url: '<?= $rootURL ?>/actions/update_action',
+                                                url: `<?= $rootURL ?>/actions/update_action`,
                                                 method: 'POST',
                                                 data: {
                                                     'report_uuid': report_uuid,
@@ -327,7 +961,7 @@ global $api_url;
                                                 success: function(res) {
                                                     if (res.success) {
                                                         $.ajax({
-                                                            url: '<?= $api_url ?>/get_column_types',
+                                                            url: `<?= $apiURL ?>/get_column_types`,
                                                             type: 'POST',
                                                             data: form_data,
                                                             contentType: false,
@@ -573,7 +1207,7 @@ global $api_url;
                 }
                 else if (currentFile !== null) {
                     $.ajax({
-                        url: '<?= $api_url ?>/change_column_types',
+                        url: `<?= $apiURL ?>/change_column_types`,
                         type: 'POST',
                         data: JSON.stringify({
                             'filename': currentFile,
@@ -588,7 +1222,7 @@ global $api_url;
                             }
                             else {
                                 $.ajax({ //Update table with column changes so they can be applied to test set if necessary
-                                    url: '<?= $rootURL ?>/reports/set-column_changes',
+                                    url: `<?= $rootURL ?>/reports/set-column_changes`,
                                     type: 'POST',
                                     data: {
                                         'filename': currentFile,
@@ -640,7 +1274,7 @@ global $api_url;
             let confirmedDeletion = confirm("Are you sure you want to delete this report? This action is irreversible.");
             if (confirmedDeletion) {
                 $.ajax({
-                    url: '<?= $rootURL ?>/reports/delete',
+                    url: `<?= $rootURL ?>/reports/delete`,
                     type: 'POST',
                     data: {
                         'uuid': uuid
@@ -654,7 +1288,7 @@ global $api_url;
                                 success: function(data) {
                                     user_uuid = data.user.id;
                                     $.ajax({
-                                        url: '<?= $api_url ?>/delete_dataset',
+                                        url: `<?= $apiURL ?>/delete_dataset`,
                                         type: 'POST',
                                         data: JSON.stringify({
                                             'filename': filename,
@@ -665,7 +1299,7 @@ global $api_url;
                                             if (data.success){
                                                 let success_message = data.message;
                                                 $.ajax({
-                                                    url: '<?= $rootURL ?>/actions/update_action',
+                                                    url: `<?= $rootURL ?>/actions/update_action`,
                                                     method: 'POST',
                                                     data: {
                                                         'report_uuid': uuid,
@@ -722,5 +1356,21 @@ global $api_url;
 
         }
     </script>
-<?php
-include_once __DIR__ . '/_footer.php';
+    <div class="modal fade" id="termsModal" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="termsModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="termsModalLabel">Citation Acknowledgement&nbsp;</h5>
+                    </div>
+                    <div class="modal-body" id="termsModalBody">
+                        <p>By using CLASSify and any models trained or data generated, I agree to cite the following paper in any related research or publications: <a href="https://arxiv.org/abs/2310.03618/">CLASSify: A Web-based Tool for Machine Learning</a>. The link to this paper is also available in the User Guide at any time. </p>
+                        <p>Proper citation acknowledges the work that went into the development of CLASSify and supports continued development of the tools we provide at CAAI. Thank you for helping us continue to advance AI/ML research.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="decline-terms">Decline</button>
+                        <button type="button" class="btn btn-primary" id="accept-terms">Accept</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>

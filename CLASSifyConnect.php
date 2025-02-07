@@ -6,6 +6,9 @@ use ExternalModules\AbstractExternalModule;
 use ExternalModules\ExternalModules;
 use REDCap;
 
+$rootURL = "https://data.ai.uky.edu/classify";
+$apiURL = "https://data.ai.uky.edu/classify/api";
+
 class CLASSifyConnect extends AbstractExternalModule {
 
     // provided courtesy of Scott J. Pearson
@@ -29,6 +32,11 @@ class CLASSifyConnect extends AbstractExternalModule {
     protected function includeJS($file) {
         // Use this function to use your JavaScript files in the frontend
         echo '<script src="' . $this->getUrl($file) . '"></script>';
+    }
+
+    protected function includeCSS($file) {
+        // Use this function to use your JavaScript files in the frontend
+        echo '<link href="' . $this->getUrl($file) . '">';
     }
 
     protected function variable() {
