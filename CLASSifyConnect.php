@@ -48,7 +48,34 @@ class CLASSifyConnect extends AbstractExternalModule {
     function redcap_every_page_top($project_id) {
         if (self::isExternalModulePage() | self::isCLASSifyPage()) {
             $project_id = $_GET['pid']; // or however you're getting the project ID
-            $instruments = REDCap::getInstrumentNames();
+            $instruments = REDCap::getInstrumentNames(); // Get instrument names
+
+            // Initialize an empty array to store data by instrument
+            $data_by_instrument = [];
+
+            // Loop through each instrument and retrieve only its data
+            foreach ($instruments as $instrument_name => $instrument_label) {
+                // Get the list of fields for the instrument
+                $data_dict = REDCap::getDataDictionary('array');
+                $instrument_fields = [];
+
+                foreach ($data_dict as $field_name => $field_info) {
+                    if ($field_info['form_name'] === $instrument_name) {
+                        $instrument_fields[] = $field_name;
+                    }
+                }
+
+                // Retrieve data for only those fields
+                if (!empty($instrument_fields)) {
+                    $records = REDCap::getData([
+                        'project_id' => $project_id,
+                        'return_format' => 'json',
+                        'fields' => $instrument_fields
+                    ]);
+
+                    $data_by_instrument[$instrument_name] = json_decode($records, true);
+                }
+            }
             $form = $this->getProjectSetting('form-id');
             $classifier = $this->getProjectSetting('class-field');
             $email = $this->getProjectSetting('classify-email');
@@ -61,8 +88,11 @@ class CLASSifyConnect extends AbstractExternalModule {
                 console.log("Hi :)")
                 const instruments = <?=json_encode($instruments)?>;
                 console.log(instruments);
-                const moduleData = <?= json_encode($data) ?>;
-                console.log(moduleData);
+                const moduleData= <?= json_encode($data) ?>;
+                const moduleCSV = <?= json_encode($data) ?>;
+                const moduleByIns = <?= json_encode($data_by_instrument) ?>;
+                console.log(moduleCSV);
+                console.log(moduleByIns);
                 const selectedForms = <?= json_encode($form) ?>;
                 const classifier = <?= json_encode($classifier) ?>;
                 const email = <?= json_encode($email) ?>;
