@@ -36,21 +36,19 @@ class CLASSifyConnect extends AbstractExternalModule {
         $this->includeJS('js/project_settings.js');
     }
 
-    protected function dataToJavascript() {
-
-    }
-
     private static function isCLASSifyPage() {
-        $page = isset($_SERVER['PHP_SELF']) ? $_SERVER['PHP_SELF'] : "";
-        if (preg_match("/ExternalModules\/?", $page)) {
-            return TRUE;
-        }
-        return FALSE;
+    $page = isset($_SERVER['PHP_SELF']) ? $_SERVER['PHP_SELF'] : "";
+    if (preg_match("/ExternalModules\/\?prefix=CLASSify-Connect&page=pages%2FCLASSifyConnectPage/", $_SERVER['REQUEST_URI'])) {
+        return TRUE;
     }
+    return FALSE;
+}
+
 
     function redcap_every_page_top($project_id) {
-        if (self::isExternalModulePage()) {
+        if (self::isExternalModulePage() | self::isCLASSifyPage()) {
             $project_id = $_GET['pid']; // or however you're getting the project ID
+            $instruments = REDCap::getInstrumentNames();
             $form = $this->getProjectSetting('form-id');
             $classifier = $this->getProjectSetting('class-field');
             $email = $this->getProjectSetting('classify-email');
@@ -60,7 +58,11 @@ class CLASSifyConnect extends AbstractExternalModule {
 
             ?>
             <script>
+                console.log("Hi :)")
+                const instruments = <?=json_encode($instruments)?>;
+                console.log(instruments);
                 const moduleData = <?= json_encode($data) ?>;
+                console.log(moduleData);
                 const selectedForms = <?= json_encode($form) ?>;
                 const classifier = <?= json_encode($classifier) ?>;
                 const email = <?= json_encode($email) ?>;
@@ -77,7 +79,7 @@ class CLASSifyConnect extends AbstractExternalModule {
             </script>
 
             <script src="<?= $this->getUrl('js/project_settings.js') ?>"></script>
-            <?php
+        <?php
         }
     }
 }

@@ -5,7 +5,7 @@ global $rootURL;
 global $api_url;
 ?>
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
-        <h1 class="h4">Data - <span class="text-muted">Upload</span></h1>
+        <h1 class="h4">CLASSify</h1>
     </div>
 
     <div class="row selection-btns">
@@ -13,15 +13,7 @@ global $api_url;
             <a id="add-data-btn" data-toggle="modal" data-target="#uploadModal">
                 <div class="center-home-sects">
                     <span><i class="fa fa-plus"></i></span><br>
-                    <h5>Add Data File</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-6">
-            <a id="view-all-btn" href="<?= $rootURL?>/result" class="center-home-sects">
-                <div class="center-home-sects">
-                    <span><i class="fas fa-bars"></i></span><br>
-                    <h5>View All Data</h5>
+                    <h5>Select New Data File</h5>
                 </div>
             </a>
         </div>
@@ -73,7 +65,7 @@ global $api_url;
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="submit-to-automl">Upload Dataset</button>
+                    <button type="button" class="btn btn-primary" id="submit-to-automl" onclick="handleUpload()">Upload Dataset</button>
                     <a href="<?= $rootURL ?>/result" id="gotoMLOpts" type="button" class="btn btn-primary mr-2" style="display:none;">
                         <i class="fa fa-eye"></i> View Uploaded Data
                     </a>
