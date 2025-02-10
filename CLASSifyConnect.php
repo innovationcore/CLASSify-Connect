@@ -104,6 +104,10 @@ class CLASSifyConnect extends AbstractExternalModule {
             </script>
 
             <script src="<?= $this->getUrl('js/modals.js')?>"></script>
+            <script src="<?= $this->getUrl('js/dataTables.bootstrap4.min.js')?>"></script>
+            <script src="<?= $this->getUrl('js/dataTables.buttons.min.js')?>"></script>
+            <script src="<?= $this->getUrl('js/jquery.dataTables.min.js')?>"></script>
+            <script src="<?= $this->getUrl('js/toastify.min.js')?>"></script>
         <?php
         }
     }

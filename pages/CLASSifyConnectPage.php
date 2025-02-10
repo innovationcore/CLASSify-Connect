@@ -871,8 +871,7 @@ global $api_url;
 
         $(function() {
             $('.custom-file-input').on('change', function() {
-                var fileName = $(this).val().split('\\').pop();
-                $(this).next('.custom-file-label').addClass("selected").html(fileName);
+                $(this).next('.custom-file-label').addClass("selected").html(filename);
             });
 
             $.ajax({
@@ -962,8 +961,6 @@ global $api_url;
                     console.log('User not found.');
                 }
             });
-
-
         });
 
         function delete_data(uuid, filename, still_processing) {
