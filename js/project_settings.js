@@ -48,7 +48,7 @@ function handleUpload() {
     const parsed = parseCSVWithNewNames(moduleData, classifier[0]);
 
     // Define or fallback to a default filename
-    var currentFile = filename; // Fallback if filename is not defined
+    var currentFile = document.getElementById('filename').value; // Fallback if filename is not defined
 
     // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
     currentFile = currentFile.endsWith('.csv') ? currentFile : currentFile + '.csv';

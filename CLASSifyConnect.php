@@ -6,6 +6,9 @@ use ExternalModules\AbstractExternalModule;
 use ExternalModules\ExternalModules;
 use REDCap;
 
+$GLOBALS['classifyURL'] = 'https://data.ai.uky.edu/classify';
+$GLOBALS['api_url'] = 'https://data.ai.uky.edu/classify/api';
+
 class CLASSifyConnect extends AbstractExternalModule {
 
     // provided courtesy of Scott J. Pearson
@@ -96,19 +99,11 @@ class CLASSifyConnect extends AbstractExternalModule {
                 const selectedForms = <?= json_encode($form) ?>;
                 const classifier = <?= json_encode($classifier) ?>;
                 const email = <?= json_encode($email) ?>;
-                const user_filename = <?= json_encode($filename) ?>;
                 const project_title = <?= json_encode($project_title) ?>;
-                var filename = null;
-                // If they provide an alternative filename, we can use that. Otherwise, we can just use the project title.
-                if (user_filename.length > 0) {
-                    filename = user_filename[0]
-                }
-                else {
-                    filename = project_title
-                }
+
             </script>
 
-            <script src="<?= $this->getUrl('js/project_settings.js') ?>"></script>
+            <script src="<?= $this->getUrl('js/modals.js')?>"></script>
         <?php
         }
     }

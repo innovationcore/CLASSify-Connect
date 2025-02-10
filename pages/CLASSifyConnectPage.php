@@ -1,7 +1,7 @@
 <?php
 global $instruments;
 $page = 'home';
-global $rootURL;
+global $classifyURL;
 global $api_url;
 ?>
     <script>
@@ -93,7 +93,7 @@ global $api_url;
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                     <a id="add-data-btn" data-toggle="modal" data-target="#columnsModal">
                         <div class="center-home-sects">
-                            <button type="button" class="btn btn-primary" id="go-to-columns" onclick="handleUpload()">Next</button>
+                            <button type="button" class="btn btn-primary" id="go-to-columns">Next</button>
                         </div>
                     </a>
                 </div>
@@ -118,6 +118,11 @@ global $api_url;
                     <h5>Choose which columns to include in uploaded dataset.</h5>
                     <h6>You may also change data types of each column here.</h6>
                     <h6>Categorical variables will be one-hot encoded.</h6>
+                    <label for="class-selector">Select a column for your classifier: </label>
+                    <select id="class-selector" name="class-selector">
+                        <option value="tester">Tester</option>
+                        <!-- This will be filled with option tags for each column header -->
+                    </select>
                     <div class="row">
                         <div class="col-md-12">
                             <form id="columns">
@@ -131,7 +136,7 @@ global $api_url;
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="submit-to-automl" onclick="handleUpload()">Upload Dataset</button>
-                    <a href="<?= $rootURL ?>/result" id="gotoMLOpts" type="button" class="btn btn-primary mr-2" style="display:none;">
+                    <a href="<?= $classifyURL ?>/result" id="gotoMLOpts" type="button" class="btn btn-primary mr-2" style="display:none;">
                         <i class="fa fa-eye"></i> View Uploaded Data
                     </a>
                 </div>
@@ -220,6 +225,41 @@ global $api_url;
         </div>
     </div>
 
+    <!-- Notification Modal -->
+    <div class="modal fade" id="notificationModal" tabindex="-1" role="dialog" aria-labelledby="notificationModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notificationModalLabel"></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="notificationModalBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Error Modal -->
+    <div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger" id="errorModalLabel">Error!</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="errorModalBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="text/javascript">
         var collection = {};
         var collectionTable = $('#collection');
@@ -235,11 +275,11 @@ global $api_url;
 
         $('#formsModal').on('shown.bs.modal', function () {
             $.ajax({
-                url: '<?= $rootURL ?>/users/getUser',
+                url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
                 method: 'get',
                 success: function(data) {
-                    if (!data.user.accepted_terms) { //If user has not accepted terms yet, show modal
-                        window.location.href = "<?= $rootURL ?>";
+                    if (!data.user_id.accepted_terms) { //If user has not accepted terms yet, show modal
+                        window.location.href = "<?= $classifyURL ?>";
                     }
                 },
                 error : function(request,error) {
@@ -247,8 +287,6 @@ global $api_url;
                 }
             });
         });
-
-
 
         function show_tooltip() {
             var panel = document.getElementById("instruction-panel");
@@ -275,7 +313,7 @@ global $api_url;
             if (!uploaded_to_clearml) {
                 let filename_no_uuid = currentFile.substring(0, currentFile.lastIndexOf('_')) + currentFile.substring(currentFile.lastIndexOf('.'));
                 $.ajax({ //Delete report to prevent clearml dataset error
-                    url: '<?= $rootURL ?>/reports/delete',
+                    url: '<?= $classifyURL ?>/reports/delete',
                     type: 'POST',
                     data: {
                         'uuid': report_uuid,
@@ -284,10 +322,10 @@ global $api_url;
                     success: function(data) {
                         let user_uuid = null;
                         $.ajax({
-                            url: '<?= $rootURL?>/users/getUser',
+                            url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
                             method: 'get',
                             success: function(data) {
-                                user_uuid = data.user.id;
+                                user_uuid = data.user_id;
                                 $.ajax({
                                     url: '<?= $api_url ?>/delete_dataset',
                                     type: 'POST',
@@ -299,7 +337,7 @@ global $api_url;
                                     success: function(data) {
                                         if (data.success){
                                             $.ajax({
-                                                url: '<?= $rootURL ?>/actions/update_action',
+                                                url: '<?= $classifyURL ?>/actions/update_action',
                                                 method: 'POST',
                                                 data: {
                                                     'report_uuid': report_uuid,
@@ -309,27 +347,27 @@ global $api_url;
                                                 success: function(res) {
                                                     if (res.success) {
                                                     } else {
-                                                        showError(res.message);
+                                                        console.log(res.message);
                                                     }
                                                 },
                                                 error: function(xhr, ajaxOptions, thrownError) {
-                                                    showError('Error communicating with the server');
+                                                    console.log('Error communicating with the server');
                                                 }
                                             });
                                         } else {
-                                            showError(data.message);
+                                            console.log(data.message);
                                         }
 
                                     },
                                     error: function (xhr, status, error) {
-                                        showError("Error communicating with the server.");
+                                        console.log("Error communicating with the server.");
                                         return null;
                                     }
                                 });
                             },
                             error: function(xhr, request, error) {
 
-                                showError('User not found.');
+                                console.log('User not found.');
                             }
                         });
                     },
@@ -347,7 +385,7 @@ global $api_url;
         $('#submitUploadBtn').click(function(){
             let uploadFile = $('#uploadReportFile');
             if (uploadFile.val() === null || uploadFile.val() === '') {
-                showError('Please upload a .csv file');
+                console.log('Please upload a .csv file');
                 return;
             }
             var file = uploadFile[0].files[0];
@@ -359,33 +397,47 @@ global $api_url;
                 );
             }
             if (!file.name.endsWith('.csv')) {
-                showError('File must be a .csv');
+                console.log('File must be a .csv');
                 return;
             }
             if (file === undefined) {
-                showError('Unknown file error encountered');
+                console.log('Unknown file error encountered');
                 return;
             }
             let max_filesize = 500*1024*1024; //500 MB
             if (file.size > max_filesize) {
-                showError('File is too large. Max filesize is 500 MB');
+                console.log('File is too large. Max filesize is 500 MB');
                 return;
             }
 
             toggleLoadingScreenOverlay();
 
+            // Parse the CSV with the classifier field
+            const parsed = parseCSVWithNewNames(moduleData, classifier[0]);
+
+            // Define or fallback to a default filename
+            var currentFile = document.getElementById('filename').value; // Fallback if filename is not defined
+
+            // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
+            currentFile = currentFile.endsWith('.csv') ? currentFile : currentFile + '.csv';
+
             $.ajax({
-                url: '<?= $rootURL ?>/users/getUser',
+                url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
                 method: 'get',
                 success: function(data) {
-                    user_uuid = data.user.id;
+                    const user_uuid = data.user_id;
+                    userUUID = data.user_id;
+                    currentFileUUID = currentFile.split('.csv')[0] + `_${userUUID}.csv`;
+
+                    // Create form data object
                     var form_data = new FormData();
-                    form_data.append('file', file);
+
+                    // Create a Blob from the parsed CSV string
+                    const csvBlob = new Blob([parsed], { type: 'text/csv' });
+
+                    // Append the Blob and other fields to the form data
+                    form_data.append('file', csvBlob, currentFile);
                     form_data.append('user_uuid', user_uuid);
-                    // get filename from uploaded file
-                    currentFile = file.name;
-                    currentFile = currentFile.replace('.csv', '_'+user_uuid+'.csv');
-                    // form_data.append('filename', currentFile);
                     $.ajax({
                         url: '<?= $api_url ?>/verify_dataset',
                         type: 'POST',
@@ -395,7 +447,7 @@ global $api_url;
                         success: function(data) {
                             if (data.success) {
                                 $.ajax({
-                                    url: '<?= $rootURL ?>/reports/submit',
+                                    url: '<?= $classifyURL ?>/reports/submit',
                                     method: 'post',
                                     dataType: 'json',
                                     data: form_data,
@@ -406,7 +458,7 @@ global $api_url;
                                             report_uuid = res.report_uuid;
                                             filename = res.file_name;
                                             $.ajax({
-                                                url: '<?= $rootURL ?>/actions/update_action',
+                                                url: '<?= $classifyURL ?>/actions/update_action',
                                                 method: 'POST',
                                                 data: {
                                                     'report_uuid': report_uuid,
@@ -429,47 +481,47 @@ global $api_url;
                                                                 showColumns(data.data_types, data.missing_values);
                                                             },
                                                             error: function (xhr, status, error) {
-                                                                showError("Error communicating with the server.");
+                                                                console.log("Error communicating with the server.");
                                                                 toggleLoadingScreenOverlay();
                                                                 return null;
                                                             }
                                                         });
                                                     } else {
-                                                        showError(res.message);
+                                                        console.log(res.message);
                                                         toggleLoadingScreenOverlay();
                                                     }
                                                 },
                                                 error: function(xhr, ajaxOptions, thrownError) {
                                                     toggleLoadingScreenOverlay();
-                                                    showError('Error communicating with the server');
+                                                    console.log('Error communicating with the server');
                                                 }
                                             });
 
                                         } else {
-                                            showError(res.message);
+                                            console.log(res.message);
                                             toggleLoadingScreenOverlay();
                                         }
                                     },
                                     error: function(xhr, ajaxOptions, thrownError) {
                                         toggleLoadingScreenOverlay();
-                                        showError('Error communicating with the server');
+                                        console.log('Error communicating with the server');
                                     }
                                 });
                             }
                             else {
-                                showError(data.message);
+                                console.log(data.message);
                                 toggleLoadingScreenOverlay();
                             }
                         },
                         error: function (xhr, status, error) {
-                            showError("Error communicating with the server.");
+                            console.log("Error communicating with the server.");
                             toggleLoadingScreenOverlay();
                             return null;
                         }
                     });
                 },
                 error: function(xhr, request, error) {
-                    showError('Error getting user data.');
+                    console.log('Error getting user data.');
                     toggleLoadingScreenOverlay();
                 }
             });
@@ -618,7 +670,7 @@ global $api_url;
                                             if (Number.isInteger(Number(fill_value))) {
                                                 fill_value = Number(fill_value);
                                             } else {
-                                                showError('Fill value for column '+element.id+' not valid for type integer.');
+                                                console.log('Fill value for column '+element.id+' not valid for type integer.');
                                                 error = 1;
                                                 return;
                                             }
@@ -627,7 +679,7 @@ global $api_url;
                                             if (!isNaN(Number(fill_value)) && (Number.isFinite(Number(fill_value)))) {
                                                 fill_value = Number(fill_value);
                                             } else {
-                                                showError('Fill value for column '+element.id+' not valid for type float.');
+                                                console.log('Fill value for column '+element.id+' not valid for type float.');
                                                 error = 1;
                                                 return;
                                             }
@@ -638,7 +690,7 @@ global $api_url;
                                             } else if (fill_value === 'false' || fill_value === '0' || fill_value === 'False' || fill_value === 'FALSE'){
                                                 fill_value = 0;
                                             } else {
-                                                showError('Fill value for column '+element.id+' not valid for type bool.');
+                                                console.log('Fill value for column '+element.id+' not valid for type bool.');
                                                 error = 1;
                                                 return;
                                             }
@@ -672,12 +724,12 @@ global $api_url;
                         success: function(data) {
                             if (data.success == false) {
                                 toggleLoadingScreenOverlay()
-                                showError(data.message);
+                                console.log(data.message);
                                 return null;
                             }
                             else {
                                 $.ajax({ //Update table with column changes so they can be applied to test set if necessary
-                                    url: '<?= $rootURL ?>/reports/set-column_changes',
+                                    url: '<?= $classifyURL ?>/reports/set-column_changes',
                                     type: 'POST',
                                     data: {
                                         'filename': currentFile,
@@ -686,7 +738,7 @@ global $api_url;
                                     success: function(data) {
                                         if (data.success == false) {
                                             toggleLoadingScreenOverlay()
-                                            showError(data.message);
+                                            console.log(data.message);
                                             return null;
                                         }
                                         else {
@@ -700,7 +752,7 @@ global $api_url;
                                     },
                                     error: function (xhr, status, error) {
                                         toggleLoadingScreenOverlay()
-                                        showError("Error communicating with the server.");
+                                        console.log("Error communicating with the server.");
                                         return null;
                                     }
                                 });
@@ -709,14 +761,14 @@ global $api_url;
                         },
                         error: function (xhr, status, error) {
                             toggleLoadingScreenOverlay()
-                            showError("Error communicating with the server.");
+                            console.log("Error communicating with the server.");
                             return null;
                         }
                     });
 
                 } else {
                     toggleLoadingScreenOverlay()
-                    showError("Please upload a file first.");
+                    console.log("Please upload a file first.");
                 }
             }
         });
@@ -729,7 +781,7 @@ global $api_url;
             let confirmedDeletion = confirm("Are you sure you want to delete this report? This action is irreversible.");
             if (confirmedDeletion) {
                 $.ajax({
-                    url: '<?= $rootURL ?>/reports/delete',
+                    url: '<?= $classifyURL ?>/reports/delete',
                     type: 'POST',
                     data: {
                         'uuid': uuid
@@ -738,10 +790,10 @@ global $api_url;
                         if (data.success) {
                             let user_uuid = null;
                             $.ajax({
-                                url: '<?= $rootURL?>/users/getUser',
+                                url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
                                 method: 'get',
                                 success: function(data) {
-                                    user_uuid = data.user.id;
+                                    user_uuid = data.user_id;
                                     $.ajax({
                                         url: '<?= $api_url ?>/delete_dataset',
                                         type: 'POST',
@@ -754,7 +806,7 @@ global $api_url;
                                             if (data.success){
                                                 let success_message = data.message;
                                                 $.ajax({
-                                                    url: '<?= $rootURL ?>/actions/update_action',
+                                                    url: '<?= $classifyURL ?>/actions/update_action',
                                                     method: 'POST',
                                                     data: {
                                                         'report_uuid': uuid,
@@ -766,36 +818,36 @@ global $api_url;
                                                             showSuccess(data.message);
                                                             $('#collection').DataTable().ajax.reload();
                                                         } else {
-                                                            showError(res.message);
+                                                            console.log(res.message);
                                                         }
                                                     },
                                                     error: function(xhr, ajaxOptions, thrownError) {
-                                                        showError('Error communicating with the server');
+                                                        console.log('Error communicating with the server');
                                                     }
                                                 });
                                             } else {
-                                                showError(data.message);
+                                                console.log(data.message);
                                             }
 
                                         },
                                         error: function (xhr, status, error) {
-                                            showError("Error communicating with the server.");
+                                            console.log("Error communicating with the server.");
                                             return null;
                                         }
                                     });
                                 },
                                 error: function(xhr, request, error) {
 
-                                    showError('User not found.');
+                                    console.log('User not found.');
                                 }
                             });
                         } else {
-                            showError(data.message);
+                            console.log(data.message);
                             return null;
                         }
                     },
                     error: function (xhr, status, error) {
-                        showError("Error communicating with the server.");
+                        console.log("Error communicating with the server.");
                         return null;
                     }
                 });
@@ -824,15 +876,16 @@ global $api_url;
             });
 
             $.ajax({
-                url: '<?= $rootURL?>/users/getUser',
+                url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
                 method: 'get',
                 success: function(data) {
-                    user_uuid = data.user.id;
+                    user_uuid = data.user_id;
+                    console.log(user_uuid)
                     collectionDataTable = collectionTable.DataTable({
                         serverSide: true,
                         processing: true,
                         ajax: {
-                            url: "<?= $rootURL ?>/reports/list/".concat(user_uuid)
+                            url: "<?= $classifyURL ?>/reports/list/".concat(user_uuid)
                         },
                         order: [[ 1, "desc" ]],
                         responsive: true,
@@ -868,7 +921,7 @@ global $api_url;
                                 data: null,
                                 render: function(data) {
                                     if(data.status === "Processed"){
-                                        return `<a href="<?= $rootURL ?>/result/${data.uuid}" class="btn btn-primary" data-toggle="tooltip" data-placement="left" title="View Results">
+                                        return `<a href="<?= $classifyURL ?>/result/${data.uuid}" class="btn btn-primary" data-toggle="tooltip" data-placement="left" title="View Results">
                                                     View Results <i class="fas fa-file-alt"></i>
                                                 </a>
                                                 <button onclick="rerun_data('${data.uuid}', '${data.filename}');" class="btn btn-secondary" data-toggle="tooltip" data-placement="left">
@@ -878,14 +931,14 @@ global $api_url;
                                                     <i class="fa fa-trash"></i> Delete Results
                                                 </button>`;
                                     } else if (data.status === "Uploaded") {
-                                        return `<a href="<?= $rootURL ?>/reports/prepare/${data.uuid}" class="btn btn-primary" data-toggle="tooltip" data-placement="left">
+                                        return `<a href="<?= $classifyURL ?>/reports/prepare/${data.uuid}" class="btn btn-primary" data-toggle="tooltip" data-placement="left">
                                                     <i class="fa fa-file"></i> Prepare Dataset
                                                 </a>
                                                 <button onclick="delete_data('${data.uuid}', '${data.filename}', false);" class="btn btn-danger" data-toggle="tooltip" data-placement="left">
                                                     <i class="fa fa-trash"></i> Delete Dataset
                                                 </button>`;
                                     } else if (data.status === "Preview") {
-                                        return `<a href="<?= $rootURL ?>/reports/prepare/${data.uuid}" class="btn btn-primary" data-toggle="tooltip" data-placement="left">
+                                        return `<a href="<?= $classifyURL ?>/reports/prepare/${data.uuid}" class="btn btn-primary" data-toggle="tooltip" data-placement="left">
                                                     <i class="fa fa-file"></i> Preview Dataset
                                                 </a>
                                                 <button onclick="delete_data('${data.uuid}', '${data.filename}', false);" class="btn btn-danger" data-toggle="tooltip" data-placement="left">
@@ -906,7 +959,7 @@ global $api_url;
                 },
                 error: function(xhr, request, error) {
                     console.log(xhr);
-                    showError('User not found.');
+                    console.log('User not found.');
                 }
             });
 
@@ -920,7 +973,7 @@ global $api_url;
                 }
             }
             $.ajax({
-                url: '<?= $rootURL ?>/reports/delete',
+                url: '<?= $classifyURL ?>/reports/delete',
                 type: 'POST',
                 data: {
                     'uuid': uuid,
@@ -930,10 +983,10 @@ global $api_url;
                     if (data.success){
                         let user_uuid = null;
                         $.ajax({
-                            url: '<?= $rootURL?>/users/getUser',
+                            url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
                             method: 'get',
                             success: function(data) {
-                                user_uuid = data.user.id;
+                                user_uuid = data.user_id;
                                 $.ajax({
                                     url: '<?= $api_url ?>/delete_dataset',
                                     type: 'POST',
@@ -946,7 +999,7 @@ global $api_url;
                                         if (data.success){
                                             let success_message = data.message;
                                             $.ajax({
-                                                url: '<?= $rootURL ?>/actions/update_action',
+                                                url: '<?= $classifyURL ?>/actions/update_action',
                                                 method: 'POST',
                                                 data: {
                                                     'report_uuid': uuid,
@@ -958,36 +1011,36 @@ global $api_url;
                                                         showSuccess(success_message);
                                                         collectionDataTable.ajax.reload();
                                                     } else {
-                                                        showError(res.message);
+                                                        console.log(res.message);
                                                     }
                                                 },
                                                 error: function(xhr, ajaxOptions, thrownError) {
-                                                    showError('Error communicating with the server');
+                                                    console.log('Error communicating with the server');
                                                 }
                                             });
                                         } else {
-                                            showError(data.message);
+                                            console.log(data.message);
                                         }
 
                                     },
                                     error: function (xhr, status, error) {
-                                        showError("Error communicating with the server.");
+                                        console.log("Error communicating with the server.");
                                         return null;
                                     }
                                 });
                             },
                             error: function(xhr, request, error) {
 
-                                showError('User not found.');
+                                console.log('User not found.');
                             }
                         });
                     } else {
-                        showError(data.message);
+                        console.log(data.message);
                     }
 
                 },
                 error: function (xhr, status, error) {
-                    showError("Error communicating with the server.");
+                    console.log("Error communicating with the server.");
                     return null;
                 }
             });
@@ -996,10 +1049,10 @@ global $api_url;
         function rerun_data(report_uuid, filename) {
             $('#spinner').show();
             $.ajax({
-                url: '<?= $rootURL ?>/users/getUser', //Get user uuid
+                url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
                 method: 'get',
                 success: function(data) {
-                    let user_uuid = data.user.id;
+                    let user_uuid = data.user_id;
                     $.ajax({
                         url: '<?= $api_url ?>/copy_dataset', //Copy dataset in s3
                         type: 'POST',
@@ -1013,7 +1066,7 @@ global $api_url;
                                 let new_filename = data.message;
                                 //new_filename = new_filename.substring(0, new_filename.lastIndexOf('_')) + '.csv'
                                 $.ajax({
-                                    url: '<?= $rootURL ?>/reports/submit-rerun', //Submit new dataset to postgres
+                                    url: '<?= $classifyURL ?>/reports/submit-rerun', //Submit new dataset to postgres
                                     method: 'post',
                                     data: {
                                         'new_filename': new_filename,
@@ -1023,7 +1076,7 @@ global $api_url;
                                     success: function(data) {
                                         let new_report_uuid = data.report_uuid
                                         $.ajax({
-                                            url: '<?= $rootURL ?>/actions/update_action', //Create action for duplication
+                                            url: '<?= $classifyURL ?>/actions/update_action', //Create action for duplication
                                             method: 'POST',
                                             data: {
                                                 'report_uuid': report_uuid,
@@ -1033,7 +1086,7 @@ global $api_url;
                                             success: function(res) {
                                                 if (res.success) {
                                                     $.ajax({
-                                                        url: '<?= $rootURL ?>/actions/update_action', //Create action for new dataset creation
+                                                        url: '<?= $classifyURL ?>/actions/update_action', //Create action for new dataset creation
                                                         method: 'POST',
                                                         data: {
                                                             'report_uuid': new_report_uuid,
@@ -1043,7 +1096,7 @@ global $api_url;
                                                         success: function(res) {
                                                             if (res.success) {
                                                                 $.ajax({
-                                                                    url: '<?= $rootURL ?>/reports/get-task_id', //Get task ID of original job to get parameters
+                                                                    url: '<?= $classifyURL ?>/reports/get-task_id', //Get task ID of original job to get parameters
                                                                     type: 'get',
                                                                     data: {
                                                                         'uuid': report_uuid
@@ -1052,51 +1105,47 @@ global $api_url;
                                                                         let task_id = data.task_id;
                                                                         sessionStorage.setItem('task_id', task_id);
                                                                         $('#spinner').hide();
-                                                                        window.location.href = "<?= $rootURL ?>/reports/prepare/".concat(new_report_uuid); //Open parameter page
+                                                                        window.location.href = "<?= $classifyURL ?>/reports/prepare/".concat(new_report_uuid); //Open parameter page
                                                                     },
                                                                     error: function(xhr, request, error) {
                                                                         $('#spinner').hide();
-                                                                        showError('Error getting task id.');
+                                                                        console.log('Error getting task id.');
                                                                     }
                                                                 });
                                                             }
                                                         },
                                                         error: function(xhr, ajaxOptions, thrownError) {
-                                                            showError('Error communicating with the server');
+                                                            console.log('Error communicating with the server');
                                                         }
                                                     });
                                                 }
                                             },
                                             error: function(xhr, ajaxOptions, thrownError) {
-                                                showError('Error communicating with the server');
+                                                console.log('Error communicating with the server');
                                             }
                                         });
                                     },
                                     error: function(xhr, request, error) {
                                         $('#spinner').hide();
-                                        showError('Error getting user data.');
+                                        console.log('Error getting user data.');
                                     }
                                 });
                             } else {
                                 $('#spinner').hide();
-                                showError(data.message);
+                                console.log(data.message);
                             }
                         },
                         error: function (xhr, status, error) {
                             $('#spinner').hide();
-                            showError("Error communicating with the server.");
+                            console.log("Error communicating with the server.");
                             return null;
                         }
                     });
                 },
                 error: function(xhr, request, error) {
                     $('#spinner').hide();
-                    showError('Error getting user data.');
+                    console.log('Error getting user data.');
                 }
             });
         }
-
-
     </script>
-<?php
-include_once __DIR__ . '/_footer.php';
