@@ -93,7 +93,7 @@ global $api_url;
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                     <a id="add-data-btn" data-toggle="modal" data-target="#columnsModal">
                         <div class="center-home-sects">
-                            <button type="button" class="btn btn-primary" id="go-to-columns" onclick="formsNext()">Next</button>
+                            <button type="button" class="btn btn-primary" id="go-to-columns" onclick="handleUpload()">Next</button>
                         </div>
                     </a>
                 </div>
@@ -219,8 +219,6 @@ global $api_url;
             </table>
         </div>
     </div>
-
-    <script src="<?= $this->getUrl('js/project_settings.js') ?>"></script>
 
     <script type="text/javascript">
         var collection = {};

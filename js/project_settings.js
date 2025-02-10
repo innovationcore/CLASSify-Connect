@@ -47,9 +47,6 @@ function handleUpload() {
     // Parse the CSV with the classifier field
     const parsed = parseCSVWithNewNames(moduleData, classifier[0]);
 
-    // Get email field from input
-    const email = document.getElementsByName('classify-email____0')[0].value;
-
     // Define or fallback to a default filename
     var currentFile = filename; // Fallback if filename is not defined
 
@@ -428,9 +425,6 @@ function handleUpload() {
 }
 
 function checkEmail() {
-    const email_field = document.getElementsByName('classify-email____0')[0];
-    let email = email_field.value;
-    console.log(email);
     $.get(`${classify_root}/users/getUserFromEmail?email=${email}`, function(data, status) {
         let response = JSON.stringify(data);
         response = JSON.parse(response)
