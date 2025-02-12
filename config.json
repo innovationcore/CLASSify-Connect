@@ -47,15 +47,9 @@
     "links": {
         "project": [
             {
-                "name": "CLASSify Connection",
+                "name": "CLASSifyConnect",
                 "icon": "fas fa-message",
                 "url": "pages/CLASSifyConnectPage.php",
-                "show-header-and-footer": true
-            },
-            {
-                "name": "CLASSify Visualizations",
-                "icon": "fas fa-message",
-                "url": "pages/CLASSifyVisualizations.php",
                 "show-header-and-footer": true
             }
         ]
