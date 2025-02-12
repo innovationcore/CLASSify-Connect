@@ -102,7 +102,6 @@ class CLASSifyConnect extends AbstractExternalModule {
                 const project_title = <?= json_encode($project_title) ?>;
 
             </script>
-
             <script src="<?= $this->getUrl('js/modals.js')?>"></script>
             <script src="<?= $this->getUrl('js/dataTables.bootstrap4.min.js')?>"></script>
             <script src="<?= $this->getUrl('js/dataTables.buttons.min.js')?>"></script>

@@ -14,26 +14,6 @@ foreach ($metadata as $field => $attributes) {
     $fieldsByInstrument[$instrument][] = $field;
 }
 ?>
-    <script>
-        function formsNext() {
-            // Parse the CSV with the classifier field
-            const parsed = parseCSVWithNewNames(moduleData, classifier[0]);
-
-            // Define or fallback to a default filename
-            var inpFilename = document.getElementById('filename').value; // Fallback if filename is not defined
-            let currentFile = inpFilename;
-
-            // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
-            if (inpFilename.length > 0) {
-                currentFile = currentFile.endsWith('.csv') ? currentFile : currentFile + '.csv';
-            }
-            else {
-                currentFile = 'redcap_upload.csv';
-            }
-            console.log(currentFile);
-        }
-    </script>
-
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
         <h1 class="h4"><b><a href="https://data.ai.uky.edu/classify/">CLASSify</a></b></h1>
     </div>
@@ -102,6 +82,37 @@ foreach ($metadata as $field => $attributes) {
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <a id="add-data-btn" data-toggle="modal" data-target="#classifierModal">
+                        <div class="center-home-sects">
+                            <button type="button" class="btn btn-primary" id="go-to-classifier">Next</button>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- choose classifier modal -->
+    <div class="modal fade" id="classifierModal" tabindex="-1" role="dialog" aria-labelledby="classifierModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="classifierModalLabel">Preview&nbsp;</h5>
+                    <div class="spinner-border" role="status" id="spinner" style="display:none;">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="classifierModalBody">
+                    <label for="class-selector">Select a column for your classifier: </label>
+                    <select id="class-selector" name="class-selector">
+                        <!-- This will be filled with option tags for each column header -->
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                     <a id="add-data-btn" data-toggle="modal" data-target="#columnsModal">
                         <div class="center-home-sects">
                             <button type="button" class="btn btn-primary" id="go-to-columns">Next</button>
@@ -129,15 +140,11 @@ foreach ($metadata as $field => $attributes) {
                     <h5>Choose which columns to include in uploaded dataset.</h5>
                     <h6>You may also change data types of each column here.</h6>
                     <h6>Categorical variables will be one-hot encoded.</h6>
-                    <label for="class-selector">Select a column for your classifier: </label>
-                    <select id="class-selector" name="class-selector">
-                        <!-- This will be filled with option tags for each column header -->
-                    </select>
                     <div class="row">
                         <div class="col-md-12">
                             <form id="columns">
                                 <div id="column_names" class="columns-div">
-
+                                    <!-- This will hold the columns and their typings. -->
                                 </div>
                             </form>
                         </div>
@@ -145,7 +152,7 @@ foreach ($metadata as $field => $attributes) {
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="submit-to-automl" onclick="handleUpload()">Upload Dataset</button>
+                    <button type="button" class="btn btn-primary" id="submit-to-automl">Upload Dataset</button>
                     <a href="<?= $classifyURL ?>/result" id="gotoMLOpts" type="button" class="btn btn-primary mr-2" style="display:none;">
                         <i class="fa fa-eye"></i> View Uploaded Data
                     </a>
@@ -153,57 +160,6 @@ foreach ($metadata as $field => $attributes) {
             </div>
         </div>
     </div>
-
-    <!-- upload file Modal -->
-    <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="uploadModalLabel">Upload Report</h5>
-                    <!--                    <div class="fa-solid fa-circle-info help-tooltip">-->
-                    <!--                        <span class="tooltip-text" id="help-tooltip-text">Tooltip text</span>-->
-                    <!--                    </div>-->
-                    <a id="site-help" class="fa fa-question-circle" aria-hidden="true" onmouseover="show_tooltip()" onmouseout="hide_tooltip()"></a>
-                    <div id="instruction-panel" class="instruction-panel"> <!-- This div contains the tooltip -->
-                        <h5>Tips for Uploading Reports:</h5>
-                        <ul>
-                            <li>Report must be in the .csv file format</li>
-                            <li>Report must contain a column labeled 'class'</li>
-                            <ul>
-                                <li>If the class label is binary, it must have values 0/1 or TRUE/FALSE</li>
-                                <li>If the class label is multiclass, it must have integer values (0,1,2...)</li>
-                            </ul>
-                            <li>No column names or values should contain commas</li>
-                            <li>Rows with missing values can be handled through Classify in several ways</li>
-                            <ul>
-                                <li>For each column with missing values, you can choose to drop missing rows, synthetically fill, or use a constant fill value.</li>
-                                <li>Any other method for handling missing data should be done before uploading to Classify.</li>
-                            </ul>
-                            <li>Categorical string variables will be automatically one-hot encoded. Ordinal encodings (encoding categories as integers) should be done before uploading</li>
-                        </ul>
-                    </div>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body" id="uploadModalBody">
-                    <div class="col-lg-12 mb-3 form-floating">
-                        <div class="custom-file" id="customFile">
-                            <input type="file" class="form-control custom-file-input" accept=".csv" id="uploadReportFile" aria-describedby="fileHelp">
-                            <label class="form-control custom-file-label" for="uploadReportFile" id="uploadReportFileLabel">
-                                Select file...
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="submitUploadBtn">Preview</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="cover-spin"></div>
 
 <!--    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3">
         <div class="spinner-border" role="status" id="spinner" style="display:none;">
@@ -320,18 +276,46 @@ foreach ($metadata as $field => $attributes) {
             $('#uploadReportFileLabel').html('Select file...');
         });
 
-        $('#columnsModal').on('shown.bs.modal', function () {
-            let selected = document.getElementsByClassName('instrument-selection');
+        function parseCSVWithNewNames(csvString, classifierField) {
+            if (!csvString || !classifierField) {
+                console.error('Invalid input. Please provide both CSV content and a classifier.');
+                return;
+            }
 
+            const lines = csvString.split('\n');
+            if (lines.length < 2) {
+                console.error('Invalid CSV format. At least one header row and one data row are required.');
+                return;
+            }
+
+            // Replace header
+            const headers = lines[0].split(',').map(h => {
+                const cleanHeader = h.trim();
+                return cleanHeader === classifierField ? "class" : cleanHeader;
+            });
+
+            // Check if the classifierField was found in headers
+            const classIndex = headers.indexOf("class");
+            if (classIndex === -1) {
+                console.warn(`The classifier field "${classifierField}" was not found in the CSV headers.`);
+            }
+
+            // Replace ? with 0 and filter rows with a blank in the "class" column
+            const updatedRows = lines.slice(1)
+                .map(row => row.split(',').map(value => value.trim() === '?' ? '' : value.trim()))
+                .filter(row => row[classIndex] !== '');
+
+            return [headers.join(','), ...updatedRows.map(row => row.join(','))].join('\n');
+        }
+
+        $('#classifierModal').on('shown.bs.modal', function () {
             let dropdown = document.getElementById('class-selector');
 
             let fields_sorted = <?= json_encode($fieldsByInstrument)?>;
 
             for(const [key, value] of Object.entries(fields_sorted)) {
-                console.log(key);
                 if (document.getElementById(key).checked) {
                     for(let i=0; i<value.length; i++) {
-                        console.log(value[i]);
                         let newElement = document.createElement('option');
                         newElement.value = value[i];
                         newElement.innerHTML = value[i];
@@ -339,8 +323,126 @@ foreach ($metadata as $field => $attributes) {
                     }
                 }
             }
+        });
 
-            console.log(fields_sorted);
+        $('#columnsModal').on('shown.bs.modal', function () {
+            toggleLoadingScreenOverlay();
+
+            // Parse the CSV with the classifier field
+            const parsed = parseCSVWithNewNames(moduleData, document.getElementById('class-selector').value);
+
+            // Define or fallback to a default filename
+            var currentFile = document.getElementById('filename').value; // Fallback if filename is not defined
+
+            // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
+            currentFile = currentFile.endsWith('.csv') ? currentFile : currentFile + '.csv';
+
+            $.ajax({
+                url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
+                method: 'get',
+                success: function(data) {
+                    const user_uuid = data.user_id;
+                    userUUID = data.user_id;
+                    currentFileUUID = currentFile.split('.csv')[0] + `_${userUUID}.csv`;
+
+                    // Create form data object
+                    var form_data = new FormData();
+
+                    // Create a Blob from the parsed CSV string
+                    const csvBlob = new Blob([parsed], { type: 'text/csv' });
+
+                    // Append the Blob and other fields to the form data
+                    form_data.append('file', csvBlob, currentFile);
+                    form_data.append('user_uuid', user_uuid);
+                    $.ajax({
+                        url: '<?= $api_url ?>/verify_dataset',
+                        type: 'POST',
+                        data: form_data,
+                        contentType: false,
+                        processData: false,
+                        success: function(data) {
+                            if (data.success) {
+                                $.ajax({
+                                    url: '<?= $classifyURL ?>/reports/submit',
+                                    method: 'post',
+                                    dataType: 'json',
+                                    data: form_data,
+                                    processData: false,
+                                    contentType: false,
+                                    success: function(res) {
+                                        if (res.success) {
+                                            report_uuid = res.report_uuid;
+                                            filename = res.file_name;
+                                            $.ajax({
+                                                url: '<?= $classifyURL ?>/actions/update_action',
+                                                method: 'POST',
+                                                data: {
+                                                    'report_uuid': report_uuid,
+                                                    'user_uuid': user_uuid,
+                                                    'action': 'Uploaded dataset',
+                                                    'session_id': 'REDCap Upload',
+                                                    'api_key': '7217be72-156e-4bda-9798-d7d6c8fc59da'
+                                                },
+                                                success: function(res) {
+                                                    if (res.success) {
+                                                        $.ajax({
+                                                            url: '<?= $api_url ?>/get_column_types',
+                                                            type: 'POST',
+                                                            data: form_data,
+                                                            contentType: false,
+                                                            processData: false,
+                                                            success: function(data) {
+                                                                toggleLoadingScreenOverlay();
+                                                                showSuccess('Dataset uploaded');
+                                                                $('#uploadModal').modal('hide');
+                                                                $('#columnsModal').modal('show');
+                                                                showColumns(data.data_types, data.missing_values);
+                                                            },
+                                                            error: function (xhr, status, error) {
+                                                                console.log("Error communicating with the server.");
+                                                                toggleLoadingScreenOverlay();
+                                                                return null;
+                                                            }
+                                                        });
+                                                    } else {
+                                                        console.log(res.message);
+                                                        toggleLoadingScreenOverlay();
+                                                    }
+                                                },
+                                                error: function(xhr, ajaxOptions, thrownError) {
+                                                    toggleLoadingScreenOverlay();
+                                                    console.log('Error communicating with the server');
+                                                }
+                                            });
+
+                                        } else {
+                                            console.log(res.message);
+                                            toggleLoadingScreenOverlay();
+                                        }
+                                    },
+                                    error: function(xhr, ajaxOptions, thrownError) {
+                                        toggleLoadingScreenOverlay();
+                                        console.log('Error communicating with the server');
+                                    }
+                                });
+                            }
+                            else {
+                                console.log(data.message);
+                                toggleLoadingScreenOverlay();
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.log("Error communicating with the server.");
+                            toggleLoadingScreenOverlay();
+                            return null;
+                        }
+                    });
+                },
+                error: function(xhr, request, error) {
+                    console.log('Error getting user data.');
+                    toggleLoadingScreenOverlay();
+                }
+            });
         });
 
         $('#columnsModal').on('hidden.bs.modal', function () {
@@ -498,7 +600,9 @@ foreach ($metadata as $field => $attributes) {
                                                 data: {
                                                     'report_uuid': report_uuid,
                                                     'user_uuid': user_uuid,
-                                                    'action': 'Uploaded dataset'
+                                                    'action': 'Uploaded dataset',
+                                                    'session_id': 'REDCap Upload',
+                                                    'api_key': '7217be72-156e-4bda-9798-d7d6c8fc59da'
                                                 },
                                                 success: function(res) {
                                                     if (res.success) {
@@ -528,7 +632,10 @@ foreach ($metadata as $field => $attributes) {
                                                 },
                                                 error: function(xhr, ajaxOptions, thrownError) {
                                                     toggleLoadingScreenOverlay();
-                                                    console.log('Error communicating with the server');
+                                                    console.log('Error communicating with update_action.');
+                                                    console.log(xhr);
+                                                    console.log(ajaxOptions);
+                                                    console.log(thrownError);
                                                 }
                                             });
 
@@ -562,28 +669,27 @@ foreach ($metadata as $field => $attributes) {
             });
         }); // upload
 
-
         function showColumns(data_types, missing_values) {
-            let toAppendBool = "";
-            let toggle = 0;
-            Object.keys(data_types).forEach((column) => {
-                column_name = column.replace(/^\w/, c => c.toUpperCase());
-                if (column == 'class') {
-                    toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
-                    if (toggle == 1) {
-                        toAppendBool += ' background-color: #DDDDDD;'
-                    }
-                    toAppendBool += `">
+        let toAppendBool = "";
+        let toggle = 0;
+        Object.keys(data_types).forEach((column) => {
+            column_name = column.replace(/^\w/, c => c.toUpperCase());
+            if (column == 'class') {
+                toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
+                if (toggle == 1) {
+                    toAppendBool += ' background-color: #DDDDDD;'
+                }
+                toAppendBool += `">
 
                                         <input id="${column}" type="checkbox" class="form-check-input" checked disabled>
                                         <label for="${column}" class="bold-label">${column_name}</label>
                                     </div>`;
-                } else {
-                    toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
-                    if (toggle == 1) {
-                        toAppendBool += ' background-color: #DDDDDD;'
-                    }
-                    toAppendBool += `">
+            } else {
+                toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
+                if (toggle == 1) {
+                    toAppendBool += ' background-color: #DDDDDD;'
+                }
+                toAppendBool += `">
                                         <input id="${column}" type="checkbox" class="form-check-input" checked>
                                         <label for="${column}" class="bold-label">${column_name}</label>
                                         <div class="row">
@@ -592,42 +698,42 @@ foreach ($metadata as $field => $attributes) {
                                             <div class="col-md-3">
                                                 <label class="form-check-label mb-3" title="integer">
                                                     <input id="${column}-integer" name="${column}" type="radio" class="form-check-input"`
-                    if (data_types[column]=='integer') {
-                        toAppendBool += ' checked'
-                    }
-                    toAppendBool += `>Integer
+                if (data_types[column] == 'integer') {
+                    toAppendBool += ' checked'
+                }
+                toAppendBool += `>Integer
                                                 </label>
                                             </div>
                                             <div class="col-md-2">
                                                 <label class="form-check-label mb-3" title="float">
                                                     <input id="${column}-float" name="${column}" type="radio" class="form-check-input"`
-                    if (data_types[column]=='float') {
-                        toAppendBool += ' checked'
-                    }
-                    toAppendBool += `>Float
+                if (data_types[column] == 'float') {
+                    toAppendBool += ' checked'
+                }
+                toAppendBool += `>Float
                                                 </label>
                                             </div>
                                             <div class="col-md-2">
                                                 <label class="form-check-label mb-3" title="bool">
                                                     <input id="${column}-bool" name="${column}" type="radio" class="form-check-input"`
-                    if (data_types[column]=='bool') {
-                        toAppendBool += ' checked'
-                    }
-                    toAppendBool += `>Bool
+                if (data_types[column] == 'bool') {
+                    toAppendBool += ' checked'
+                }
+                toAppendBool += `>Bool
                                                 </label>
                                             </div>
                                             <div class="col-md-3">
                                                 <label class="form-check-label mb-3" title="categorical">
                                                     <input id="${column}-categorical" name="${column}" type="radio" class="form-check-input"`
-                    if (data_types[column]=='string') {
-                        toAppendBool += ' checked'
-                    }
-                    toAppendBool += `>Categorical
+                if (data_types[column] == 'string') {
+                    toAppendBool += ' checked'
+                }
+                toAppendBool += `>Categorical
                                                 </label>
                                             </div>
                                         </div>`
-                    if (missing_values[column]) {
-                        toAppendBool += `<div class="row"><div class="col-md-5">
+                if (missing_values[column]) {
+                    toAppendBool += `<div class="row"><div class="col-md-5">
                                         <p>Contains missing values.<\p></div><div class="col-md-4">
                                         <select id="${column}-missing-values" class="selectpicker" style="display:block !important;">
                                             <option value="drop">Drop Missing Rows</option>
@@ -635,54 +741,190 @@ foreach ($metadata as $field => $attributes) {
                                             <option value="synthetic">Synthetically Fill</option>
                                         </select></div>
                                         <div class="col-md-1"><input type="text" id="${column}-fill-value" value="0" size="6" hidden></div></div>`;
-                    }
-                    toAppendBool += `</div>`;
                 }
-                if (toggle == 0) {
-                    toggle = 1;
-                }
-                else {
-                    toggle = 0;
+                toAppendBool += `</div>`;
+            }
+            if (toggle == 0) {
+                toggle = 1;
+            } else {
+                toggle = 0;
+            }
+        });
+        $('#columnsModal #column_names').append(toAppendBool);
+        var modal = document.getElementById('columnsModal');
+        var modal_checkboxes = modal.querySelectorAll("input[type='checkbox']")
+        var missing_dropdowns = modal.querySelectorAll("select");
+
+        modal_checkboxes.forEach(function (checkbox) {
+            checkbox.addEventListener('click', function () {
+                if (!this.checked) {
+                    var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
+                    radios.forEach(function (radio) {
+                        radio.disabled = true;
+                    });
+                } else {
+                    var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
+                    radios.forEach(function (radio) {
+                        radio.disabled = false;
+                    });
                 }
             });
-            $('#columnsModal #column_names').append(toAppendBool);
-            var modal = document.getElementById('columnsModal');
-            var modal_checkboxes = modal.querySelectorAll("input[type='checkbox']")
-            var missing_dropdowns = modal.querySelectorAll("select");
+        });
 
-            modal_checkboxes.forEach(function(checkbox) {
-                checkbox.addEventListener('click', function() {
-                    if (!this.checked) {
-                        var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
-                        radios.forEach(function(radio) {
-                            radio.disabled = true;
-                        });
+        missing_dropdowns.forEach(function (dropdown) {
+            dropdown.addEventListener('change', function (event) {
+                let select_id = event.target.id.slice(0, -15);
+                let text_id = select_id + '-fill-value'
+                if (event.target.value === 'constant') {
+                    if (document.getElementById(select_id + '-categorical').checked) { //Change default value for categorical variables
+                        document.getElementById(text_id).value = 'Unknown';
                     } else {
-                        var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
-                        radios.forEach(function(radio) {
-                            radio.disabled = false;
-                        });
+                        document.getElementById(text_id).value = '0';
                     }
-                });
+                    document.getElementById(text_id).removeAttribute('hidden');
+                } else {
+                    document.getElementById(text_id).setAttribute('hidden', true);
+                }
             });
+        });
 
-            missing_dropdowns.forEach(function(dropdown) {
-                dropdown.addEventListener('change', function(event) {
-                    let select_id = event.target.id.slice(0, -15);
-                    let text_id = select_id + '-fill-value'
-                    if (event.target.value === 'constant') {
-                        if (document.getElementById(select_id+'-categorical').checked) { //Change default value for categorical variables
-                            document.getElementById(text_id).value = 'Unknown';
-                        } else {
-                            document.getElementById(text_id).value = '0';
+        $('#submit-to-automl').click(function () {
+            if (confirm("Are you sure you want to submit this data for processing?")) {
+                toggleLoadingScreenOverlay()
+                let error = 0;
+                //let form = $('#column_names').serializeArray();
+                let form = [];
+                $('.form-check-input').each(function (index, element) {
+                    if (element.id !== 'class') {
+                        if ($(element).attr('type') === 'checkbox') {
+                            if ($(element).is(':checked')) {
+                                let checked_type = document.querySelector('input[name="' + element.id + '"]:checked').id;
+                                let type = checked_type.substring(checked_type.lastIndexOf('-') + 1);
+                                if (document.getElementById(element.id + '-missing-values')) { //If there's missing values to deal with
+                                    let fill_method = document.getElementById(element.id + '-missing-values').value;
+                                    let fill_value = null;
+                                    if (fill_method === 'constant') {
+                                        fill_value = document.getElementById(element.id + '-fill-value').value;
+                                        if (type === 'integer') {
+                                            if (Number.isInteger(Number(fill_value))) {
+                                                fill_value = Number(fill_value);
+                                            } else {
+                                                alert('Fill value for column ' + element.id + ' not valid for type integer.');
+                                                error = 1;
+                                                return;
+                                            }
+                                        } else if (type === 'float') {
+                                            if (!isNaN(Number(fill_value)) && (Number.isFinite(Number(fill_value)))) {
+                                                fill_value = Number(fill_value);
+                                            } else {
+                                                alert('Fill value for column ' + element.id + ' not valid for type float.');
+                                                error = 1;
+                                                return;
+                                            }
+                                        } else if (type === 'bool') {
+                                            if (fill_value === 'true' || fill_value === '1' || fill_value === 'True' || fill_value === 'TRUE') {
+                                                fill_value = 1;
+                                            } else if (fill_value === 'false' || fill_value === '0' || fill_value === 'False' || fill_value === 'FALSE') {
+                                                fill_value = 0;
+                                            } else {
+                                                alert('Fill value for column ' + element.id + ' not valid for type bool.');
+                                                error = 1;
+                                                return;
+                                            }
+                                        } //Don't need to check categorical type, because any entry would be valid for string
+                                    }
+                                    form.push({
+                                        column: element.id,
+                                        data_type: type,
+                                        checked: true,
+                                        missing: fill_method,
+                                        fill_value: fill_value
+                                    })
+                                } else {
+                                    form.push({
+                                        column: element.id,
+                                        data_type: type,
+                                        checked: true,
+                                        missing: null,
+                                        fill_value: null
+                                    })
+                                }
+                            } else {
+                                form.push({column: element.id, data_type: 'none', checked: false}) //If dropped column, update actions
+                            }
+
                         }
-                        document.getElementById(text_id).removeAttribute('hidden');
-                    } else {
-                        document.getElementById(text_id).setAttribute('hidden', true);
                     }
                 });
-            });
-        }
+                if (error === 1) {
+                    toggleLoadingScreenOverlay()
+                    return null;
+                } else if (currentFile !== null) {
+                    console.log(currentFileUUID);
+                    $.ajax({
+                        url: `${classify_api}/change_column_types`,
+                        type: 'POST',
+                        data: JSON.stringify({
+                            'filename': currentFileUUID,
+                            'data_types': JSON.stringify(form)
+                        }),
+                        contentType: 'application/json; charset=utf-8',
+                        success: function (data) {
+                            console.log(form);
+                            console.log(data);
+                            if (data.success == false) {
+                                toggleLoadingScreenOverlay()
+                                alert(data.message);
+                                return null;
+                            } else {
+                                console.log('right before set-column_changes')
+                                $.ajax({ //Update table with column changes so they can be applied to test set if necessary
+                                    url: `${classify_root}/reports/set-column_changes`,
+                                    type: 'POST',
+                                    data: {
+                                        'filename': currentFileUUID,
+                                        'column_changes': JSON.stringify(form)
+                                    },
+                                    success: function (data) {
+                                        if (data.success == false) {
+                                            toggleLoadingScreenOverlay()
+                                            alert(data.message);
+                                            return null;
+                                        } else {
+                                            alert(data.message);
+                                            $('#gotoMLOpts').show();
+                                            $('#submit-to-automl').hide();
+                                            uploaded_to_clearml = true;
+                                            toggleLoadingScreenOverlay()
+                                        }
+
+                                    },
+                                    error: function (xhr, status, error) {
+                                        toggleLoadingScreenOverlay()
+                                        alert("Error communicating with the server.");
+                                        return null;
+                                    }
+                                });
+                            }
+
+                        },
+                        error: function (xhr, status, error) {
+                            toggleLoadingScreenOverlay()
+                            console.log(xhr);
+                            console.log(status);
+                            console.log(error);
+                            alert("Error communicating with the server.");
+                            return null;
+                        }
+                    });
+
+                } else {
+                    toggleLoadingScreenOverlay()
+                    alert("Please upload a file first.");
+                }
+            }
+        });
+    }
 
         $('#submit-to-automl').click(function() {
             if(confirm("Are you sure you want to submit this data for processing?")){

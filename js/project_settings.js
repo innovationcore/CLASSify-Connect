@@ -7,43 +7,6 @@ var currentFileUUID = null;
 var reportUUID = null;
 
 function handleUpload() {
-    document.getElementById('columnsModal').innerHTML = `<div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="columnsModalLabel">Preview&nbsp;</h5>
-                    <div class="spinner-border" role="status" id="spinner" style="display:none;">
-                      <span class="sr-only">Loading...</span>
-                    </div>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="close_modal()">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body" id="columnsModalBody">
-                    <h5>Choose which columns to include in uploaded dataset.</h5>
-                    <h6>You may also change data types of each column here.</h6>
-                    <h6>Categorical variables will be one-hot encoded.</h6>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <form id="columns">
-                                <div id="column_names" class="columns-div">
-
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="close_modal()">Close</button>
-                    <button type="button" class="btn btn-primary" id="submit-to-automl">Upload Dataset</button>
-                    <a href="${classify_root}/result" id="gotoMLOpts" target="_blank" type="button" class="btn btn-primary mr-2" style="display:none;">
-                        <i class="fa fa-eye"></i> View Uploaded Data
-                    </a>
-                </div>
-            </div>
-        </div>
-        <div id="cover-spin"></div>
-`;
-
     // Parse the CSV with the classifier field
     const parsed = parseCSVWithNewNames(moduleData, classifier[0]);
 
@@ -398,6 +361,9 @@ function handleUpload() {
                                     },
                                     error: function (xhr, status, error) {
                                         toggleLoadingScreenOverlay()
+                                        console.log(xhr);
+                                    console.log(status);
+                                    console.log(error);
                                         alert("Error communicating with the server.");
                                         return null;
                                     }
