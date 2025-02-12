@@ -14,17 +14,63 @@ foreach ($metadata as $field => $attributes) {
     $fieldsByInstrument[$instrument][] = $field;
 }
 ?>
+    <style>
+        .selection-btns {
+            margin: 0 10% 0 10%;
+        }
+
+        .selection-btns a {
+            text-decoration: none;
+        }
+
+        .center-home-sects {
+            text-align:center;
+            border-radius: 5%;
+            padding: 5% 0 5% 0;
+            margin:0;
+            color: #606060;
+            -webkit-transition: background-color 100ms linear;
+            -ms-transition: background-color 100ms linear;
+            transition: background-color 100ms linear;
+        }
+
+        .center-home-sects:hover {
+            color: #fff;
+            background-color: #606060;
+        }
+
+        .center-home-sects:hover span{
+            color: #fff;
+        }
+
+        .center-home-sects span {
+            font-size: 10vw;
+            color: #606060;
+            -webkit-transition: background-color 100ms linear;
+            -ms-transition: background-color 100ms linear;
+            transition: background-color 100ms linear;
+        }
+    </style>
+
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
-        <h1 class="h4"><b><a href="https://data.ai.uky.edu/classify/">CLASSify</a></b></h1>
+        <h1 class="h4"><b>CLASSify</b></h1>
     </div>
 
     <div class="row selection-btns">
         <div class="col-md-6">
-<!--            <a id="add-data-btn" data-toggle="modal" data-target="#uploadModal">-->
             <a id="form-select-btn" data-toggle="modal" data-target="#formsModal">
-                <button style="border: 1px solid; border-radius: 10px;">
-                    <h5><span><i class="fa fa-plus"></i>Select New Data File</span></h5>
-                </button>
+                <div class="center-home-sects">
+                    <span><i class="fas fa-plus"></i></span><br>
+                    <h5>Upload Instrument Data</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a id="view-all-btn" href="<?= $classifyURL?>/result" class="center-home-sects">
+                <div class="center-home-sects">
+                    <span><i class="fas fa-bars"></i></span><br>
+                    <h5>Go to CLASSify</h5>
+                </div>
             </a>
         </div>
     </div>
