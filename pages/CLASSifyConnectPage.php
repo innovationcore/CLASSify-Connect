@@ -68,7 +68,7 @@ foreach ($metadata as $field => $attributes) {
         <div class="col-md-6">
             <a id="view-all-btn" href="<?= $classifyURL?>/result" class="center-home-sects">
                 <div class="center-home-sects">
-                    <span><i class="fas paper-plane"></i></span><br>
+                    <span><i class="fas fa-paper-plane"></i></span><br>
                     <h5>Go to CLASSify</h5>
                 </div>
             </a>
