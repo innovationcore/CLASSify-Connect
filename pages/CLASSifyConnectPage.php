@@ -834,6 +834,7 @@ foreach ($metadata as $field => $attributes) {
             });
         });
 
+        // Some sort of error here, files don't upload and it fires the confirm prompt twice.
         $('#submit-to-automl').click(function () {
             if (confirm("Are you sure you want to submit this data for processing?")) {
                 toggleLoadingScreenOverlay()
