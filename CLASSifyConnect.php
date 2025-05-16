@@ -87,8 +87,9 @@ class CLASSifyConnect extends AbstractExternalModule {
             $filename = $this->getProjectSetting('filename');
 
             ?>
+
+            <!-- Sets some global variables that are needed in JS code across the module. -->
             <script>
-                console.log("Hi :)")
                 const instruments = <?=json_encode($instruments)?>;
                 console.log(instruments);
                 const moduleData= <?= json_encode($data) ?>;
@@ -100,10 +101,15 @@ class CLASSifyConnect extends AbstractExternalModule {
                 const classifier = <?= json_encode($classifier) ?>;
                 const email = <?= json_encode($email) ?>;
                 const project_title = <?= json_encode($project_title) ?>;
-
             </script>
+
+            <!-- Includes the code needed to make the modal popups for CLASSify interaction work. -->
             <script src="<?= $this->getUrl('js/modals.js')?>"></script>
+
+            <!-- adds the code used in the module configuration page -->
             <script src="<?= $this->getUrl('js/project_settings.js')?>"></script>
+
+            <!-- Everything below imports the versions of bootstrap that were expected from the CLASSify UI which was ported in. -->
             <script src="<?= $this->getUrl('js/dataTables.bootstrap4.min.js')?>"></script>
             <script src="<?= $this->getUrl('js/dataTables.buttons.min.js')?>"></script>
             <script src="<?= $this->getUrl('js/jquery.dataTables.min.js')?>"></script>

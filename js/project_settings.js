@@ -1,12 +1,12 @@
 const classify_root = 'https://data.ai.uky.edu/classify';
 const classify_api = 'https://data.ai.uky.edu/classify/api';
-let uploaded_to_clearml = false;
+//let uploaded_to_clearml = false;
 
 var userUUID = null;
 var currentFileUUID = null;
 var reportUUID = null;
 
-function handleUpload() {
+/*function handleUpload() {
     // Parse the CSV with the classifier field
     const parsed = parseCSVWithNewNames(moduleData, classifier[0]);
 
@@ -388,7 +388,7 @@ function handleUpload() {
             }
         });
     }
-}
+}*/
 
 function checkEmail() {
     $.get(`${classify_root}/users/getUserFromEmail?email=${email}`, function(data, status) {
@@ -457,7 +457,7 @@ function classifyRedirect() {
     window.open(`${classify_root}/result`, "_blank");
 }
 
-function close_modal() {
+/*function close_modal() {
     $('#columnsModal').modal('hide');
 
     if (!uploaded_to_clearml) {
@@ -517,4 +517,4 @@ function close_modal() {
             }
         });
     }
-}
+}*/

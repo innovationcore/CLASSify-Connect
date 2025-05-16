@@ -161,7 +161,8 @@ foreach ($metadata as $field => $attributes) {
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                     <a id="add-data-btn" data-toggle="modal" data-target="#columnsModal">
                         <div class="center-home-sects">
-                            <button type="button" class="btn btn-primary" id="go-to-columns">Next</button>
+<!--                            <button type="button" class="btn btn-primary" id="go-to-columns">Next</button>-->
+                            <button type="button" class="btn btn-primary" id="submitUploadBtn">Next</button>
                         </div>
                     </a>
                 </div>
@@ -206,36 +207,6 @@ foreach ($metadata as $field => $attributes) {
             </div>
         </div>
     </div>
-
-<!--    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3">
-        <div class="spinner-border" role="status" id="spinner" style="display:none;">
-            <span class="sr-only">Loading...</span>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col">
-            <table id="collection" class="table table-bordered dt-responsive responsive-text" style="width:100%">
-                <thead>
-                <tr>
-                    <th style="text-align: center;">Filename</th>
-                    <th style="text-align: center;">Date Added</th>
-                    <th style="text-align: center;">Status</th>
-                    <th style="text-align: center;">Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                </tbody>
-                <tfoot>
-                <tr>
-                    <th style="text-align: center;">Filename</th>
-                    <th style="text-align: center;">Date Added</th>
-                    <th style="text-align: center;">Status</th>
-                    <th style="text-align: center;">Actions</th>
-                </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>-->
 
     <!-- Notification Modal -->
     <div class="modal fade" id="notificationModal" tabindex="-1" role="dialog" aria-labelledby="notificationModalLabel" aria-hidden="true">
@@ -369,126 +340,6 @@ foreach ($metadata as $field => $attributes) {
                     }
                 }
             }
-        });
-
-        $('#columnsModal').on('shown.bs.modal', function () {
-            toggleLoadingScreenOverlay();
-
-            // Parse the CSV with the classifier field
-            const parsed = parseCSVWithNewNames(moduleData, document.getElementById('class-selector').value);
-
-            // Define or fallback to a default filename
-            var currentFile = document.getElementById('filename').value; // Fallback if filename is not defined
-
-            // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
-            currentFile = currentFile.endsWith('.csv') ? currentFile : currentFile + '.csv';
-
-            $.ajax({
-                url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
-                method: 'get',
-                success: function(data) {
-                    const user_uuid = data.user_id;
-                    userUUID = data.user_id;
-                    currentFileUUID = currentFile.split('.csv')[0] + `_${userUUID}.csv`;
-
-                    // Create form data object
-                    var form_data = new FormData();
-
-                    // Create a Blob from the parsed CSV string
-                    const csvBlob = new Blob([parsed], { type: 'text/csv' });
-
-                    // Append the Blob and other fields to the form data
-                    form_data.append('file', csvBlob, currentFile);
-                    form_data.append('user_uuid', user_uuid);
-                    $.ajax({
-                        url: '<?= $api_url ?>/verify_dataset',
-                        type: 'POST',
-                        data: form_data,
-                        contentType: false,
-                        processData: false,
-                        success: function(data) {
-                            if (data.success) {
-                                $.ajax({
-                                    url: '<?= $classifyURL ?>/reports/submit',
-                                    method: 'post',
-                                    dataType: 'json',
-                                    data: form_data,
-                                    processData: false,
-                                    contentType: false,
-                                    success: function(res) {
-                                        if (res.success) {
-                                            report_uuid = res.report_uuid;
-                                            filename = res.file_name;
-                                            $.ajax({
-                                                url: '<?= $classifyURL ?>/actions/update_action',
-                                                method: 'POST',
-                                                data: {
-                                                    'report_uuid': report_uuid,
-                                                    'user_uuid': user_uuid,
-                                                    'action': 'Uploaded dataset',
-                                                    'session_id': 'REDCap Upload',
-                                                    'api_key': '7217be72-156e-4bda-9798-d7d6c8fc59da'
-                                                },
-                                                success: function(res) {
-                                                    if (res.success) {
-                                                        $.ajax({
-                                                            url: '<?= $api_url ?>/get_column_types',
-                                                            type: 'POST',
-                                                            data: form_data,
-                                                            contentType: false,
-                                                            processData: false,
-                                                            success: function(data) {
-                                                                toggleLoadingScreenOverlay();
-                                                                showSuccess('Dataset uploaded');
-                                                                $('#uploadModal').modal('hide');
-                                                                $('#columnsModal').modal('show');
-                                                                showColumns(data.data_types, data.missing_values);
-                                                            },
-                                                            error: function (xhr, status, error) {
-                                                                console.log("Error communicating with the server.");
-                                                                toggleLoadingScreenOverlay();
-                                                                return null;
-                                                            }
-                                                        });
-                                                    } else {
-                                                        console.log(res.message);
-                                                        toggleLoadingScreenOverlay();
-                                                    }
-                                                },
-                                                error: function(xhr, ajaxOptions, thrownError) {
-                                                    toggleLoadingScreenOverlay();
-                                                    console.log('Error communicating with the server');
-                                                }
-                                            });
-
-                                        } else {
-                                            console.log(res.message);
-                                            toggleLoadingScreenOverlay();
-                                        }
-                                    },
-                                    error: function(xhr, ajaxOptions, thrownError) {
-                                        toggleLoadingScreenOverlay();
-                                        console.log('Error communicating with the server');
-                                    }
-                                });
-                            }
-                            else {
-                                console.log(data.message);
-                                toggleLoadingScreenOverlay();
-                            }
-                        },
-                        error: function (xhr, status, error) {
-                            console.log("Error communicating with the server.");
-                            toggleLoadingScreenOverlay();
-                            return null;
-                        }
-                    });
-                },
-                error: function(xhr, request, error) {
-                    console.log('Error getting user data.');
-                    toggleLoadingScreenOverlay();
-                }
-            });
         });
 
         $('#columnsModal').on('hidden.bs.modal', function () {
@@ -716,386 +567,262 @@ foreach ($metadata as $field => $attributes) {
         }); // upload
 
         function showColumns(data_types, missing_values) {
-        let toAppendBool = "";
-        let toggle = 0;
-        Object.keys(data_types).forEach((column) => {
-            column_name = column.replace(/^\w/, c => c.toUpperCase());
-            if (column == 'class') {
-                toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
-                if (toggle == 1) {
-                    toAppendBool += ' background-color: #DDDDDD;'
-                }
-                toAppendBool += `">
+            let toAppendBool = "";
+            let toggle = 0;
+            Object.keys(data_types).forEach((column) => {
+                column_name = column.replace(/^\w/, c => c.toUpperCase());
+                if (column == 'class') {
+                    toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
+                    if (toggle == 1) {
+                        toAppendBool += ' background-color: #DDDDDD;'
+                    }
+                    toAppendBool += `">
 
-                                        <input id="${column}" type="checkbox" class="form-check-input" checked disabled>
-                                        <label for="${column}" class="bold-label">${column_name}</label>
-                                    </div>`;
-            } else {
-                toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
-                if (toggle == 1) {
-                    toAppendBool += ' background-color: #DDDDDD;'
-                }
-                toAppendBool += `">
-                                        <input id="${column}" type="checkbox" class="form-check-input" checked>
-                                        <label for="${column}" class="bold-label">${column_name}</label>
-                                        <div class="row">
-                                            <div class="col-md-1">
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-check-label mb-3" title="integer">
-                                                    <input id="${column}-integer" name="${column}" type="radio" class="form-check-input"`
-                if (data_types[column] == 'integer') {
-                    toAppendBool += ' checked'
-                }
-                toAppendBool += `>Integer
-                                                </label>
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label class="form-check-label mb-3" title="float">
-                                                    <input id="${column}-float" name="${column}" type="radio" class="form-check-input"`
-                if (data_types[column] == 'float') {
-                    toAppendBool += ' checked'
-                }
-                toAppendBool += `>Float
-                                                </label>
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label class="form-check-label mb-3" title="bool">
-                                                    <input id="${column}-bool" name="${column}" type="radio" class="form-check-input"`
-                if (data_types[column] == 'bool') {
-                    toAppendBool += ' checked'
-                }
-                toAppendBool += `>Bool
-                                                </label>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-check-label mb-3" title="categorical">
-                                                    <input id="${column}-categorical" name="${column}" type="radio" class="form-check-input"`
-                if (data_types[column] == 'string') {
-                    toAppendBool += ' checked'
-                }
-                toAppendBool += `>Categorical
-                                                </label>
-                                            </div>
-                                        </div>`
-                if (missing_values[column]) {
-                    toAppendBool += `<div class="row"><div class="col-md-5">
-                                        <p>Contains missing values.<\p></div><div class="col-md-4">
-                                        <select id="${column}-missing-values" class="selectpicker" style="display:block !important;">
-                                            <option value="drop">Drop Missing Rows</option>
-                                            <option value="constant">Constant Fill Value</option>
-                                            <option value="synthetic">Synthetically Fill</option>
-                                        </select></div>
-                                        <div class="col-md-1"><input type="text" id="${column}-fill-value" value="0" size="6" hidden></div></div>`;
-                }
-                toAppendBool += `</div>`;
-            }
-            if (toggle == 0) {
-                toggle = 1;
-            } else {
-                toggle = 0;
-            }
-        });
-        $('#columnsModal #column_names').append(toAppendBool);
-        var modal = document.getElementById('columnsModal');
-        var modal_checkboxes = modal.querySelectorAll("input[type='checkbox']")
-        var missing_dropdowns = modal.querySelectorAll("select");
-
-        modal_checkboxes.forEach(function (checkbox) {
-            checkbox.addEventListener('click', function () {
-                if (!this.checked) {
-                    var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
-                    radios.forEach(function (radio) {
-                        radio.disabled = true;
-                    });
+                                            <input id="${column}" type="checkbox" class="form-check-input" checked disabled>
+                                            <label for="${column}" class="bold-label">${column_name}</label>
+                                        </div>`;
                 } else {
-                    var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
-                    radios.forEach(function (radio) {
-                        radio.disabled = false;
-                    });
+                    toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
+                    if (toggle == 1) {
+                        toAppendBool += ' background-color: #DDDDDD;'
+                    }
+                    toAppendBool += `">
+                                            <input id="${column}" type="checkbox" class="form-check-input" checked>
+                                            <label for="${column}" class="bold-label">${column_name}</label>
+                                            <div class="row">
+                                                <div class="col-md-1">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-check-label mb-3" title="integer">
+                                                        <input id="${column}-integer" name="${column}" type="radio" class="form-check-input"`
+                    if (data_types[column] == 'integer') {
+                        toAppendBool += ' checked'
+                    }
+                    toAppendBool += `>Integer
+                                                    </label>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-check-label mb-3" title="float">
+                                                        <input id="${column}-float" name="${column}" type="radio" class="form-check-input"`
+                    if (data_types[column] == 'float') {
+                        toAppendBool += ' checked'
+                    }
+                    toAppendBool += `>Float
+                                                    </label>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-check-label mb-3" title="bool">
+                                                        <input id="${column}-bool" name="${column}" type="radio" class="form-check-input"`
+                    if (data_types[column] == 'bool') {
+                        toAppendBool += ' checked'
+                    }
+                    toAppendBool += `>Bool
+                                                    </label>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-check-label mb-3" title="categorical">
+                                                        <input id="${column}-categorical" name="${column}" type="radio" class="form-check-input"`
+                    if (data_types[column] == 'string') {
+                        toAppendBool += ' checked'
+                    }
+                    toAppendBool += `>Categorical
+                                                    </label>
+                                                </div>
+                                            </div>`
+                    if (missing_values[column]) {
+                        toAppendBool += `<div class="row"><div class="col-md-5">
+                                            <p>Contains missing values.<\p></div><div class="col-md-4">
+                                            <select id="${column}-missing-values" class="selectpicker" style="display:block !important;">
+                                                <option value="drop">Drop Missing Rows</option>
+                                                <option value="constant">Constant Fill Value</option>
+                                                <option value="synthetic">Synthetically Fill</option>
+                                            </select></div>
+                                            <div class="col-md-1"><input type="text" id="${column}-fill-value" value="0" size="6" hidden></div></div>`;
+                    }
+                    toAppendBool += `</div>`;
+                }
+                if (toggle == 0) {
+                    toggle = 1;
+                } else {
+                    toggle = 0;
                 }
             });
-        });
+            $('#columnsModal #column_names').append(toAppendBool);
+            var modal = document.getElementById('columnsModal');
+            var modal_checkboxes = modal.querySelectorAll("input[type='checkbox']")
+            var missing_dropdowns = modal.querySelectorAll("select");
 
-        missing_dropdowns.forEach(function (dropdown) {
-            dropdown.addEventListener('change', function (event) {
-                let select_id = event.target.id.slice(0, -15);
-                let text_id = select_id + '-fill-value'
-                if (event.target.value === 'constant') {
-                    if (document.getElementById(select_id + '-categorical').checked) { //Change default value for categorical variables
-                        document.getElementById(text_id).value = 'Unknown';
+            modal_checkboxes.forEach(function (checkbox) {
+                checkbox.addEventListener('click', function () {
+                    if (!this.checked) {
+                        var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
+                        radios.forEach(function (radio) {
+                            radio.disabled = true;
+                        });
                     } else {
-                        document.getElementById(text_id).value = '0';
+                        var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
+                        radios.forEach(function (radio) {
+                            radio.disabled = false;
+                        });
                     }
-                    document.getElementById(text_id).removeAttribute('hidden');
-                } else {
-                    document.getElementById(text_id).setAttribute('hidden', true);
+                });
+            });
+
+            missing_dropdowns.forEach(function (dropdown) {
+                dropdown.addEventListener('change', function (event) {
+                    let select_id = event.target.id.slice(0, -15);
+                    let text_id = select_id + '-fill-value'
+                    if (event.target.value === 'constant') {
+                        if (document.getElementById(select_id + '-categorical').checked) { //Change default value for categorical variables
+                            document.getElementById(text_id).value = 'Unknown';
+                        } else {
+                            document.getElementById(text_id).value = '0';
+                        }
+                        document.getElementById(text_id).removeAttribute('hidden');
+                    } else {
+                        document.getElementById(text_id).setAttribute('hidden', true);
+                    }
+                });
+            });
+
+            // Some sort of error here, files don't upload and it fires the confirm prompt twice.
+            $('#submit-to-automl').click(function () {
+                if (confirm("Are you sure you want to submit this data for processing?")) {
+                    toggleLoadingScreenOverlay()
+                    let error = 0;
+                    //let form = $('#column_names').serializeArray();
+                    let form = [];
+                    $('.form-check-input').each(function (index, element) {
+                        if (element.id !== 'class') {
+                            if ($(element).attr('type') === 'checkbox') {
+                                if ($(element).is(':checked')) {
+                                    let checked_type = document.querySelector('input[name="' + element.id + '"]:checked').id;
+                                    let type = checked_type.substring(checked_type.lastIndexOf('-') + 1);
+                                    if (document.getElementById(element.id + '-missing-values')) { //If there's missing values to deal with
+                                        let fill_method = document.getElementById(element.id + '-missing-values').value;
+                                        let fill_value = null;
+                                        if (fill_method === 'constant') {
+                                            fill_value = document.getElementById(element.id + '-fill-value').value;
+                                            if (type === 'integer') {
+                                                if (Number.isInteger(Number(fill_value))) {
+                                                    fill_value = Number(fill_value);
+                                                } else {
+                                                    alert('Fill value for column ' + element.id + ' not valid for type integer.');
+                                                    error = 1;
+                                                    return;
+                                                }
+                                            } else if (type === 'float') {
+                                                if (!isNaN(Number(fill_value)) && (Number.isFinite(Number(fill_value)))) {
+                                                    fill_value = Number(fill_value);
+                                                } else {
+                                                    alert('Fill value for column ' + element.id + ' not valid for type float.');
+                                                    error = 1;
+                                                    return;
+                                                }
+                                            } else if (type === 'bool') {
+                                                if (fill_value === 'true' || fill_value === '1' || fill_value === 'True' || fill_value === 'TRUE') {
+                                                    fill_value = 1;
+                                                } else if (fill_value === 'false' || fill_value === '0' || fill_value === 'False' || fill_value === 'FALSE') {
+                                                    fill_value = 0;
+                                                } else {
+                                                    alert('Fill value for column ' + element.id + ' not valid for type bool.');
+                                                    error = 1;
+                                                    return;
+                                                }
+                                            } //Don't need to check categorical type, because any entry would be valid for string
+                                        }
+                                        form.push({
+                                            column: element.id,
+                                            data_type: type,
+                                            checked: true,
+                                            missing: fill_method,
+                                            fill_value: fill_value
+                                        })
+                                    } else {
+                                        form.push({
+                                            column: element.id,
+                                            data_type: type,
+                                            checked: true,
+                                            missing: null,
+                                            fill_value: null
+                                        })
+                                    }
+                                } else {
+                                    form.push({column: element.id, data_type: 'none', checked: false}) //If dropped column, update actions
+                                }
+
+                            }
+                        }
+                    });
+                    if (error === 1) {
+                        toggleLoadingScreenOverlay()
+                        return null;
+                    } else if (currentFile !== null) {
+                        console.log(currentFileUUID);
+                        $.ajax({
+                            url: `${classify_api}/change_column_types`,
+                            type: 'POST',
+                            data: JSON.stringify({
+                                'filename': currentFileUUID,
+                                'data_types': JSON.stringify(form)
+                            }),
+                            contentType: 'application/json; charset=utf-8',
+                            success: function (data) {
+                                console.log(form);
+                                console.log(data);
+                                if (data.success == false) {
+                                    toggleLoadingScreenOverlay()
+                                    alert(data.message);
+                                    return null;
+                                } else {
+                                    console.log('right before set-column_changes')
+                                    $.ajax({ //Update table with column changes so they can be applied to test set if necessary
+                                        url: `${classify_root}/reports/set-column_changes`,
+                                        type: 'POST',
+                                        data: {
+                                            'filename': currentFileUUID,
+                                            'column_changes': JSON.stringify(form)
+                                        },
+                                        success: function (data) {
+                                            if (data.success == false) {
+                                                toggleLoadingScreenOverlay()
+                                                alert(data.message);
+                                                return null;
+                                            } else {
+                                                alert(data.message);
+                                                $('#gotoMLOpts').show();
+                                                $('#submit-to-automl').hide();
+                                                uploaded_to_clearml = true;
+                                                toggleLoadingScreenOverlay()
+                                            }
+
+                                        },
+                                        error: function (xhr, status, error) {
+                                            toggleLoadingScreenOverlay()
+                                            alert("Error communicating with the server.");
+                                            return null;
+                                        }
+                                    });
+                                }
+
+                            },
+                            error: function (xhr, status, error) {
+                                toggleLoadingScreenOverlay()
+                                console.log(xhr);
+                                console.log(status);
+                                console.log(error);
+                                alert("Error communicating with the server.");
+                                return null;
+                            }
+                        });
+
+                    } else {
+                        toggleLoadingScreenOverlay()
+                        alert("Please upload a file first.");
+                    }
                 }
             });
-        });
-
-        // Some sort of error here, files don't upload and it fires the confirm prompt twice.
-        $('#submit-to-automl').click(function () {
-            if (confirm("Are you sure you want to submit this data for processing?")) {
-                toggleLoadingScreenOverlay()
-                let error = 0;
-                //let form = $('#column_names').serializeArray();
-                let form = [];
-                $('.form-check-input').each(function (index, element) {
-                    if (element.id !== 'class') {
-                        if ($(element).attr('type') === 'checkbox') {
-                            if ($(element).is(':checked')) {
-                                let checked_type = document.querySelector('input[name="' + element.id + '"]:checked').id;
-                                let type = checked_type.substring(checked_type.lastIndexOf('-') + 1);
-                                if (document.getElementById(element.id + '-missing-values')) { //If there's missing values to deal with
-                                    let fill_method = document.getElementById(element.id + '-missing-values').value;
-                                    let fill_value = null;
-                                    if (fill_method === 'constant') {
-                                        fill_value = document.getElementById(element.id + '-fill-value').value;
-                                        if (type === 'integer') {
-                                            if (Number.isInteger(Number(fill_value))) {
-                                                fill_value = Number(fill_value);
-                                            } else {
-                                                alert('Fill value for column ' + element.id + ' not valid for type integer.');
-                                                error = 1;
-                                                return;
-                                            }
-                                        } else if (type === 'float') {
-                                            if (!isNaN(Number(fill_value)) && (Number.isFinite(Number(fill_value)))) {
-                                                fill_value = Number(fill_value);
-                                            } else {
-                                                alert('Fill value for column ' + element.id + ' not valid for type float.');
-                                                error = 1;
-                                                return;
-                                            }
-                                        } else if (type === 'bool') {
-                                            if (fill_value === 'true' || fill_value === '1' || fill_value === 'True' || fill_value === 'TRUE') {
-                                                fill_value = 1;
-                                            } else if (fill_value === 'false' || fill_value === '0' || fill_value === 'False' || fill_value === 'FALSE') {
-                                                fill_value = 0;
-                                            } else {
-                                                alert('Fill value for column ' + element.id + ' not valid for type bool.');
-                                                error = 1;
-                                                return;
-                                            }
-                                        } //Don't need to check categorical type, because any entry would be valid for string
-                                    }
-                                    form.push({
-                                        column: element.id,
-                                        data_type: type,
-                                        checked: true,
-                                        missing: fill_method,
-                                        fill_value: fill_value
-                                    })
-                                } else {
-                                    form.push({
-                                        column: element.id,
-                                        data_type: type,
-                                        checked: true,
-                                        missing: null,
-                                        fill_value: null
-                                    })
-                                }
-                            } else {
-                                form.push({column: element.id, data_type: 'none', checked: false}) //If dropped column, update actions
-                            }
-
-                        }
-                    }
-                });
-                if (error === 1) {
-                    toggleLoadingScreenOverlay()
-                    return null;
-                } else if (currentFile !== null) {
-                    console.log(currentFileUUID);
-                    $.ajax({
-                        url: `${classify_api}/change_column_types`,
-                        type: 'POST',
-                        data: JSON.stringify({
-                            'filename': currentFileUUID,
-                            'data_types': JSON.stringify(form)
-                        }),
-                        contentType: 'application/json; charset=utf-8',
-                        success: function (data) {
-                            console.log(form);
-                            console.log(data);
-                            if (data.success == false) {
-                                toggleLoadingScreenOverlay()
-                                alert(data.message);
-                                return null;
-                            } else {
-                                console.log('right before set-column_changes')
-                                $.ajax({ //Update table with column changes so they can be applied to test set if necessary
-                                    url: `${classify_root}/reports/set-column_changes`,
-                                    type: 'POST',
-                                    data: {
-                                        'filename': currentFileUUID,
-                                        'column_changes': JSON.stringify(form)
-                                    },
-                                    success: function (data) {
-                                        if (data.success == false) {
-                                            toggleLoadingScreenOverlay()
-                                            alert(data.message);
-                                            return null;
-                                        } else {
-                                            alert(data.message);
-                                            $('#gotoMLOpts').show();
-                                            $('#submit-to-automl').hide();
-                                            uploaded_to_clearml = true;
-                                            toggleLoadingScreenOverlay()
-                                        }
-
-                                    },
-                                    error: function (xhr, status, error) {
-                                        toggleLoadingScreenOverlay()
-                                        alert("Error communicating with the server.");
-                                        return null;
-                                    }
-                                });
-                            }
-
-                        },
-                        error: function (xhr, status, error) {
-                            toggleLoadingScreenOverlay()
-                            console.log(xhr);
-                            console.log(status);
-                            console.log(error);
-                            alert("Error communicating with the server.");
-                            return null;
-                        }
-                    });
-
-                } else {
-                    toggleLoadingScreenOverlay()
-                    alert("Please upload a file first.");
-                }
-            }
-        });
-    }
-
-        $('#submit-to-automl').click(function() {
-            if(confirm("Are you sure you want to submit this data for processing?")){
-                toggleLoadingScreenOverlay()
-                let error = 0;
-                //let form = $('#column_names').serializeArray();
-                let form = [];
-                $('.form-check-input').each(function(index, element) {
-                    if (element.id !== 'class') {
-                        if ($(element).attr('type') == 'checkbox') {
-                            if ($(element).is(':checked')) {
-                                let checked_type = document.querySelector('input[name="'+element.id+'"]:checked').id;
-                                let type = checked_type.substring(checked_type.lastIndexOf('-')+1);
-                                if (document.getElementById(element.id+'-missing-values')) { //If there's missing values to deal with
-                                    let fill_method = document.getElementById(element.id+'-missing-values').value;
-                                    let fill_value = null;
-                                    if (fill_method === 'constant') {
-                                        fill_value = document.getElementById(element.id+'-fill-value').value;
-                                        if (type === 'integer') {
-                                            if (Number.isInteger(Number(fill_value))) {
-                                                fill_value = Number(fill_value);
-                                            } else {
-                                                console.log('Fill value for column '+element.id+' not valid for type integer.');
-                                                error = 1;
-                                                return;
-                                            }
-                                        }
-                                        else if (type === 'float') {
-                                            if (!isNaN(Number(fill_value)) && (Number.isFinite(Number(fill_value)))) {
-                                                fill_value = Number(fill_value);
-                                            } else {
-                                                console.log('Fill value for column '+element.id+' not valid for type float.');
-                                                error = 1;
-                                                return;
-                                            }
-                                        }
-                                        else if (type === 'bool') {
-                                            if (fill_value === 'true' || fill_value === '1' || fill_value === 'True' || fill_value === 'TRUE') {
-                                                fill_value = 1;
-                                            } else if (fill_value === 'false' || fill_value === '0' || fill_value === 'False' || fill_value === 'FALSE'){
-                                                fill_value = 0;
-                                            } else {
-                                                console.log('Fill value for column '+element.id+' not valid for type bool.');
-                                                error = 1;
-                                                return;
-                                            }
-                                        } //Don't need to check categorical type, because any entry would be valid for string
-                                    }
-                                    form.push({column:element.id, data_type:type, checked:true, missing:fill_method, fill_value:fill_value})
-                                }
-                                else {
-                                    form.push({column:element.id, data_type:type, checked:true, missing:null, fill_value:null})
-                                }
-                            } else {
-                                form.push({column:element.id, data_type:'none', checked:false}) //If dropped column, update actions
-                            }
-
-                        }
-                    }
-                });
-                if (error === 1) {
-                    toggleLoadingScreenOverlay()
-                    return null;
-                }
-                else if (currentFile !== null) {
-                    $.ajax({
-                        url: '<?= $api_url ?>/change_column_types',
-                        type: 'POST',
-                        data: JSON.stringify({
-                            'filename': currentFile,
-                            'data_types': JSON.stringify(form)
-                        }),
-                        contentType: 'application/json; charset=utf-8',
-                        success: function(data) {
-                            if (data.success == false) {
-                                toggleLoadingScreenOverlay()
-                                console.log(data.message);
-                                return null;
-                            }
-                            else {
-                                $.ajax({ //Update table with column changes so they can be applied to test set if necessary
-                                    url: '<?= $classifyURL ?>/reports/set-column_changes',
-                                    type: 'POST',
-                                    data: {
-                                        'filename': currentFile,
-                                        'column_changes': JSON.stringify(form)
-                                    },
-                                    success: function(data) {
-                                        if (data.success == false) {
-                                            toggleLoadingScreenOverlay()
-                                            console.log(data.message);
-                                            return null;
-                                        }
-                                        else {
-                                            showSuccess(data.message);
-                                            $('#gotoMLOpts').show();
-                                            $('#submit-to-automl').hide();
-                                            uploaded_to_clearml=true;
-                                            toggleLoadingScreenOverlay()
-                                        }
-
-                                    },
-                                    error: function (xhr, status, error) {
-                                        toggleLoadingScreenOverlay()
-                                        console.log("Error communicating with the server.");
-                                        return null;
-                                    }
-                                });
-                            }
-
-                        },
-                        error: function (xhr, status, error) {
-                            toggleLoadingScreenOverlay()
-                            console.log("Error communicating with the server.");
-                            return null;
-                        }
-                    });
-
-                } else {
-                    toggleLoadingScreenOverlay()
-                    console.log("Please upload a file first.");
-                }
-            }
-        });
+        }
 
         $('#gotoMLOpts').click(function() {
             window.location
@@ -1177,6 +904,53 @@ foreach ($metadata as $field => $attributes) {
                 });
             }
         } // deleteReport
+
+        // Deletes uploaded file from CLEARML
+        function deleteUploadedFileIfNeeded() {
+            if (!uploaded_to_clearml || !uploaded_filename) return;
+
+            $.ajax({
+                url: `${classifyURL}/users/getUserFromEmail?email=${user_email}`,
+                method: 'GET',
+                success: function(data) {
+                    const user_uuid = data.user_id;
+                    $.ajax({
+                        url: `${api_url}/delete_dataset`,
+                        type: 'POST',
+                        data: JSON.stringify({
+                            filename: uploaded_filename,
+                            uuid: user_uuid
+                        }),
+                        contentType: 'application/json; charset=utf-8',
+                        success: function(data) {
+                            if (data.success) {
+                                console.log("Dataset deleted successfully.");
+                            } else {
+                                console.log("Failed to delete dataset:", data.message);
+                            }
+                        },
+                        error: function() {
+                            console.log("Error deleting dataset.");
+                        }
+                    });
+                },
+                error: function() {
+                    console.log("Failed to get user UUID.");
+                }
+            });
+
+            uploaded_to_clearml = false; // prevent duplicate deletion
+        }
+
+        // Bind to all modal close events
+        $('.modal').on('hidden.bs.modal', function () {
+            deleteUploadedFileIfNeeded();
+        });
+
+        // Bind to page refresh/leave
+        window.addEventListener("beforeunload", function (e) {
+            deleteUploadedFileIfNeeded();
+        });
 
         function toggleLoadingScreenOverlay() {
             if ($('#cover-spin').is(':visible')){
