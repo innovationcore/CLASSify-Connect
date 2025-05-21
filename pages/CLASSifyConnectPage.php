@@ -128,11 +128,6 @@ foreach ($metadata as $field => $attributes) {
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-<!--                    <a id="add-data-btn" data-toggle="modal" data-target="#classifierModal">
-                        <div class="center-home-sects">
-                            <button type="button" class="btn btn-primary" id="go-to-classifier">Next</button>
-                        </div>
-                    </a>-->
                     <a id="add-data-btn" data-toggle="modal" data-target="#columnsModal">
                         <div class="center-home-sects">
                             <button type="button" class="btn btn-primary" id="go-to-columns">Next</button>
@@ -143,75 +138,51 @@ foreach ($metadata as $field => $attributes) {
         </div>
     </div>
 
-    <!-- choose classifier modal -->
-<!--    <div class="modal fade" id="classifierModal" tabindex="-1" role="dialog" aria-labelledby="classifierModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="classifierModalLabel">Preview&nbsp;</h5>
-                    <div class="spinner-border" role="status" id="spinner" style="display:none;">
-                        <span class="sr-only">Loading...</span>
+<!-- choose features modal -->
+<div class="modal fade" id="columnsModal" tabindex="-1" role="dialog" aria-labelledby="columnsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="columnsModalLabel">Preview&nbsp;</h5>
+                <div class="spinner-border" role="status" id="spinner" style="display:none;">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="columnsModalBody">
+                <h5>Choose which columns to include in uploaded dataset.</h5>
+                <h6>You may also change data types of each column here.</h6>
+                <h6>Categorical variables will be one-hot encoded.</h6>
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6><b>Choose which column represents your class labels:</b></h6>
+                        <select id="select-class" class="selectpicker ms-2 me-1 mb-1" title="Choose classifier column" data-width="100%">
+                            <option value="no-class-column-selected" style="color:gray; font-style: italic;">No Class Column</option>
+                        </select>
                     </div>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
                 </div>
-                <div class="modal-body" id="classifierModalBody">
-                    <label for="class-selector">Select a column for your classifier: </label>
-                    <select id="class-selector" name="class-selector"> -->
-                        <!-- This will be filled with option tags for each column header -->
-                    <!--</select>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <a id="add-data-btn" data-toggle="modal" data-target="#columnsModal">
-                        <div class="center-home-sects">
-                            <button type="button" class="btn btn-primary" id="go-to-columns">Next</button> -->
-<!--                            <button type="button" class="btn btn-primary" id="submitUploadBtn">Next</button>-->
-                        <!--</div>
-                    </a>
+                <div class="row">
+                    <div class="col-md-12">
+                        <form id="columns">
+                            <div id="column_names" class="columns-div">
+
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>-->
-
-    <!-- choose features modal -->
-    <div class="modal fade" id="columnsModal" tabindex="-1" role="dialog" aria-labelledby="columnsModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="columnsModalLabel">Preview&nbsp;</h5>
-                    <div class="spinner-border" role="status" id="spinner" style="display:none;">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body" id="columnsModalBody">
-                    <h5>Choose which columns to include in uploaded dataset.</h5>
-                    <h6>You may also change data types of each column here.</h6>
-                    <h6>Categorical variables will be one-hot encoded.</h6>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <form id="columns">
-                                <div id="column_names" class="columns-div">
-                                    <!-- This will hold the columns and their typings. -->
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="submit-to-automl">Upload Dataset</button>
-                    <a href="<?= $classifyURL ?>/result" id="gotoMLOpts" type="button" class="btn btn-primary mr-2" style="display:none;">
-                        <i class="fa fa-eye"></i> View Uploaded Data
-                    </a>
-                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="submit-to-automl">Upload Dataset</button>
+                <a href="<?= $classifyURL ?>/result" id="gotoMLOpts" type="button" class="btn btn-primary me-2" style="display:none;">
+                    <i class="fa fa-eye"></i> View Uploaded Data
+                </a>
             </div>
         </div>
     </div>
+</div>
 
     <!-- Notification Modal -->
     <div class="modal fade" id="notificationModal" tabindex="-1" role="dialog" aria-labelledby="notificationModalLabel" aria-hidden="true">
@@ -330,23 +301,6 @@ foreach ($metadata as $field => $attributes) {
             return [headers.join(','), ...updatedRows.map(row => row.join(','))].join('\n');
         }
 
-        $('#classifierModal').on('shown.bs.modal', function () {
-            let dropdown = document.getElementById('class-selector');
-
-            let fields_sorted = <?= json_encode($fieldsByInstrument)?>;
-
-            for(const [key, value] of Object.entries(fields_sorted)) {
-                if (document.getElementById(key).checked) {
-                    for(let i=0; i<value.length; i++) {
-                        let newElement = document.createElement('option');
-                        newElement.value = value[i];
-                        newElement.innerHTML = value[i];
-                        dropdown.appendChild(newElement);
-                    }
-                }
-            }
-        });
-
         $('#columnsModal').on('hidden.bs.modal', function () {
             document.getElementById('column_names').innerHTML = '';
             if (!uploaded_to_clearml) {
@@ -422,278 +376,286 @@ foreach ($metadata as $field => $attributes) {
             }
         });
 
+        // Since we're using a different upload method, we change this to show columns modal
+        //$('#submitUploadBtn').click(function(){
         $('#columnsModal').on('shown.bs.modal', function () {
-            toggleLoadingScreenOverlay();
-
-            // Parse the CSV with the classifier field
-            //const parsed = parseCSVWithNewNames(moduleData, document.getElementById('class-selector').value);
-
-            // Get either the default name, or the user set name
             currentFile = document.getElementById('filename').value;
 
             // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
             currentFile = currentFile.endsWith('.csv') ? currentFile : currentFile + '.csv';
 
-            console.log('Current File at Columns Modal shown.bs.modal: ' + currentFile)
+            console.log('Current File at submitUploadBtn: ' + currentFile)
+            console.log('User UUID at submitUploadBtn: ' + user_uuid)
 
-            $.ajax({
-                url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
-                method: 'get',
-                success: function(data) {
-                    const user_uuid = data.user_id;
-                    userUUID = data.user_id;
-                    currentFileUUID = currentFile.split('.csv')[0] + `_${userUUID}.csv`;
-
-                    // Create form data object
-                    var form_data = new FormData();
-
-                    // Create a Blob from the parsed CSV string
-                    const csvBlob = new Blob([moduleData], { type: 'text/csv' });
-
-                    // Append the Blob and other fields to the form data
-                    form_data.append('file', csvBlob, currentFile);
-                    form_data.append('user_uuid', user_uuid);
-                    $.ajax({
-                        url: '<?= $api_url ?>/verify_dataset',
-                        type: 'POST',
-                        data: form_data,
-                        contentType: false,
-                        processData: false,
-                        success: function(data) {
-                            if (data.success) {
-                                $.ajax({
-                                    url: '<?= $classifyURL ?>/reports/submit',
-                                    method: 'post',
-                                    dataType: 'json',
-                                    data: form_data,
-                                    processData: false,
-                                    contentType: false,
-                                    success: function(res) {
-                                        if (res.success) {
-                                            report_uuid = res.report_uuid;
-                                            filename = res.file_name;
-                                            $.ajax({
-                                                url: '<?= $classifyURL ?>/actions/update_action',
-                                                method: 'POST',
-                                                data: {
-                                                    'report_uuid': report_uuid,
-                                                    'user_uuid': user_uuid,
-                                                    'action': 'Uploaded dataset',
-                                                    'session_id': 'REDCap Upload',
-                                                    'api_key': '7217be72-156e-4bda-9798-d7d6c8fc59da'
-                                                },
-                                                success: function(res) {
-                                                    if (res.success) {
-                                                        $.ajax({
-                                                            url: '<?= $api_url ?>/get_column_types',
-                                                            type: 'POST',
-                                                            data: form_data,
-                                                            contentType: false,
-                                                            processData: false,
-                                                            success: function(data) {
-                                                                toggleLoadingScreenOverlay();
-                                                                showSuccess('Dataset uploaded');
-                                                                $('#uploadModal').modal('hide');
-                                                                $('#columnsModal').modal('show');
-                                                                showColumns(data.data_types, data.missing_values);
-                                                            },
-                                                            error: function (xhr, status, error) {
-                                                                console.log("Error communicating with the server.");
-                                                                toggleLoadingScreenOverlay();
-                                                                return null;
-                                                            }
-                                                        });
-                                                    } else {
-                                                        console.log(res.message);
-                                                        toggleLoadingScreenOverlay();
-                                                    }
-                                                },
-                                                error: function(xhr, ajaxOptions, thrownError) {
-                                                    toggleLoadingScreenOverlay();
-                                                    console.log('Error communicating with the server');
-                                                }
-                                            });
-
-                                        } else {
-                                            console.log(res.message);
-                                            toggleLoadingScreenOverlay();
-                                        }
-                                    },
-                                    error: function(xhr, ajaxOptions, thrownError) {
-                                        toggleLoadingScreenOverlay();
-                                        console.log('Error communicating with the server');
-                                    }
-                                });
-                            }
-                            else {
-                                console.log(data.message);
-                                toggleLoadingScreenOverlay();
-                            }
-                        },
-                        error: function (xhr, status, error) {
-                            console.log("Error communicating with the server.");
-                            toggleLoadingScreenOverlay();
-                            return null;
+            /*            let uploadFile = $('#uploadReportFile');
+                        if (uploadFile.val() === null || uploadFile.val() === '') {
+                            showError('Please upload a .csv file');
+                            return;
                         }
-                    });
-                },
-                error: function(xhr, request, error) {
-                    console.log('Error getting user data.');
-                    toggleLoadingScreenOverlay();
-                }
-            });
-        });
+                        var file = uploadFile[0].files[0];
+                        if (file.name.includes(' ')) { //If space in file name, remove it
+                            file = new File(
+                                [file], // File content remains the same
+                                file.name.replace(/\s+/g, '_'), // Replace spaces with underscores
+                                { type: file.type } // Preserve the file type
+                            );
+                        }
+                        if (!file.name.endsWith('.csv')) {
+                            showError('File must be a .csv');
+                            return;
+                        }
 
-        $('#submitUploadBtn').click(function(){
-            let uploadFile = $('#uploadReportFile');
-            console.log(uploadFile);
-            if (uploadFile.val() === null || uploadFile.val() === '') {
-                console.log('Please upload a .csv file');
-                return;
-            }
-            var file = uploadFile[0].files[0];
-            if (file.name.includes(' ')) { //If space in file name, remove it
-                file = new File(
-                    [file], // File content remains the same
-                    file.name.replace(/\s+/g, '_'), // Replace spaces with underscores
-                    { type: file.type } // Preserve the file type
-                );
-            }
-            if (!file.name.endsWith('.csv')) {
-                console.log('File must be a .csv');
-                return;
-            }
-            if (file === undefined) {
-                console.log('Unknown file error encountered');
-                return;
-            }
-            let max_filesize = 500*1024*1024; //500 MB
-            if (file.size > max_filesize) {
-                console.log('File is too large. Max filesize is 500 MB');
-                return;
-            }
+                        if (file.name.length > 104) { //100 characters + .csv
+                            showError('File name exceeds maximum length. Reduce name to less than 100 characters');
+                            return;
+                        }
+
+                        if (file === undefined) {
+                            showError('Unknown file error encountered');
+                            return;
+                        }
+                        let max_filesize = 500*1024*1024; //500 MB
+                        if (file.size > max_filesize) {
+                            showError('File is too large. Max filesize is 500 MB');
+                            return;
+                        }*/
 
             toggleLoadingScreenOverlay();
 
-            // Parse the CSV with the classifier field
-            const parsed = parseCSVWithNewNames(moduleData, classifier[0]);
+            var form_data = new FormData();
 
-            // Gets the filename
-            currentFile = document.getElementById('filename').value;
+            // Create a Blob from the parsed CSV string
+            const csvBlob = new Blob([moduleData], { type: 'text/csv' });
 
-            // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
-            currentFile = currentFile.endsWith('.csv') ? currentFile : currentFile + '.csv';
+            // Append the Blob and other fields to the form data
+            form_data.append('file', csvBlob, currentFile);
+            form_data.append('user_uuid', user_uuid);
+            // get filename from uploaded file
+            //currentFile = file.name;
+            currentFile = currentFile.replace('.csv', '_'+user_uuid+'.csv');
 
             $.ajax({
-                url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
-                method: 'get',
-                success: function(data) {
-                    const user_uuid = data.user_id;
-                    userUUID = data.user_id;
-                    currentFileUUID = currentFile.split('.csv')[0] + `_${userUUID}.csv`;
-
-                    // Create form data object
-                    var form_data = new FormData();
-
-                    // Create a Blob from the parsed CSV string
-                    const csvBlob = new Blob([moduleData], { type: 'text/csv' });
-
-                    // Append the Blob and other fields to the form data
-                    form_data.append('file', csvBlob, currentFile);
-                    form_data.append('user_uuid', user_uuid);
-                    $.ajax({
-                        url: '<?= $api_url ?>/verify_dataset',
-                        type: 'POST',
-                        data: form_data,
-                        contentType: false,
-                        processData: false,
-                        success: function(data) {
-                            if (data.success) {
-                                $.ajax({
-                                    url: '<?= $classifyURL ?>/reports/submit',
-                                    method: 'post',
-                                    dataType: 'json',
-                                    data: form_data,
-                                    processData: false,
-                                    contentType: false,
-                                    success: function(res) {
-                                        if (res.success) {
-                                            report_uuid = res.report_uuid;
-                                            filename = res.file_name;
-                                            $.ajax({
-                                                url: '<?= $classifyURL ?>/actions/update_action',
-                                                method: 'POST',
-                                                data: {
-                                                    'report_uuid': report_uuid,
-                                                    'user_uuid': user_uuid,
-                                                    'action': 'Uploaded dataset',
-                                                    'session_id': 'REDCap Upload',
-                                                    'api_key': '7217be72-156e-4bda-9798-d7d6c8fc59da'
-                                                },
-                                                success: function(res) {
-                                                    if (res.success) {
-                                                        $.ajax({
-                                                            url: '<?= $api_url ?>/get_column_types',
-                                                            type: 'POST',
-                                                            data: form_data,
-                                                            contentType: false,
-                                                            processData: false,
-                                                            success: function(data) {
-                                                                toggleLoadingScreenOverlay();
-                                                                showSuccess('Dataset uploaded');
-                                                                $('#uploadModal').modal('hide');
-                                                                $('#columnsModal').modal('show');
-                                                                showColumns(data.data_types, data.missing_values);
-                                                            },
-                                                            error: function (xhr, status, error) {
-                                                                console.log("Error communicating with the server.");
-                                                                toggleLoadingScreenOverlay();
-                                                                return null;
-                                                            }
-                                                        });
-                                                    } else {
-                                                        console.log(res.message);
-                                                        toggleLoadingScreenOverlay();
-                                                    }
-                                                },
-                                                error: function(xhr, ajaxOptions, thrownError) {
-                                                    toggleLoadingScreenOverlay();
-                                                    console.log('Error communicating with update_action.');
-                                                    console.log(xhr);
-                                                    console.log(ajaxOptions);
-                                                    console.log(thrownError);
-                                                }
-                                            });
-
-                                        } else {
-                                            console.log(res.message);
+                url: '<?= $classifyURL ?>/reports/submit',
+                method: 'post',
+                dataType: 'json',
+                data: form_data,
+                processData: false,
+                contentType: false,
+                success: function(res) {
+                    if (res.success) {
+                        report_uuid = res.report_uuid;
+                        filename = res.file_name;
+                        $.ajax({
+                            url: '<?= $classifyURL ?>/actions/update_action',
+                            method: 'POST',
+                            data: {
+                                'report_uuid': report_uuid,
+                                'user_uuid': user_uuid,
+                                'action': 'Uploaded dataset'
+                            },
+                            success: function(res) {
+                                if (res.success) {
+                                    $.ajax({
+                                        url: '<?= $api_url ?>/get_column_types',
+                                        type: 'POST',
+                                        data: form_data,
+                                        contentType: false,
+                                        processData: false,
+                                        success: function(data) {
                                             toggleLoadingScreenOverlay();
+                                            showSuccess('Dataset uploaded');
+
+                                            // Get either the default name, or the user set name
+                                            currentFile = document.getElementById('filename').value;
+
+                                            // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
+                                            currentFile = currentFile.endsWith('.csv') ? currentFile : currentFile + '.csv';
+
+                                            console.log("Current file before columnsModal.show: " + currentFile);
+
+                                            //$('#uploadModal').modal('hide');
+                                            $('#columnsModal').modal('show');
+                                            showColumns(data.data_types, data.missing_values);
+                                        },
+                                        error: function (xhr, status, error) {
+                                            showError("Error communicating with the server.");
+                                            toggleLoadingScreenOverlay();
+                                            return null;
                                         }
-                                    },
-                                    error: function(xhr, ajaxOptions, thrownError) {
-                                        toggleLoadingScreenOverlay();
-                                        console.log('Error communicating with the server');
-                                    }
-                                });
-                            }
-                            else {
-                                console.log(data.message);
+                                    });
+                                } else {
+                                    showError(res.message);
+                                    toggleLoadingScreenOverlay();
+                                }
+                            },
+                            error: function(xhr, ajaxOptions, thrownError) {
                                 toggleLoadingScreenOverlay();
+                                showError('Error communicating with the server');
                             }
-                        },
-                        error: function (xhr, status, error) {
-                            console.log("Error communicating with the server.");
-                            toggleLoadingScreenOverlay();
-                            return null;
-                        }
-                    });
+                        });
+
+                    } else {
+                        showError(res.message);
+                        toggleLoadingScreenOverlay();
+                    }
                 },
-                error: function(xhr, request, error) {
-                    console.log('Error getting user data.');
+                error: function(xhr, ajaxOptions, thrownError) {
                     toggleLoadingScreenOverlay();
+                    showError('Error communicating with the server');
                 }
             });
+
         }); // upload
+
+
+        function showColumns(data_types, missing_values) {
+            console.log(data_types);
+            let toAppendBool = "";
+            let toggle = 0;
+            let column_names = []
+            Object.keys(data_types).forEach((column) => {
+                column_name = column.replace(/^\w/, c => c.toUpperCase());
+                column_names.push(column)
+                toAppendBool += `<div class="form-check" style="border-bottom: 0.1rem solid;`
+                if (toggle == 1) {
+                    toAppendBool += ' background-color: #DDDDDD;'
+                }
+                toAppendBool += `">
+                                    <input id="${column}" type="checkbox" class="form-check-input" checked>
+                                    <label for="${column}" class="bold-label">${column_name}</label>
+                                    <div class="row">
+                                        <div class="col-md-1">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-check-label mb-3" title="integer">
+                                                <input id="${column}-integer" name="${column}" type="radio" class="form-check-input"`
+                if (data_types[column]=='integer') {
+                    toAppendBool += ' checked'
+                }
+                toAppendBool += `>Integer
+                                            </label>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-check-label mb-3" title="float">
+                                                <input id="${column}-float" name="${column}" type="radio" class="form-check-input"`
+                if (data_types[column]=='float') {
+                    toAppendBool += ' checked'
+                }
+                toAppendBool += `>Float
+                                            </label>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-check-label mb-3" title="bool">
+                                                <input id="${column}-bool" name="${column}" type="radio" class="form-check-input"`
+                if (data_types[column]=='bool') {
+                    toAppendBool += ' checked'
+                }
+                toAppendBool += `>Bool
+                                            </label>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-check-label mb-3" title="categorical">
+                                                <input id="${column}-categorical" name="${column}" type="radio" class="form-check-input"`
+                if (data_types[column]=='string') {
+                    toAppendBool += ' checked'
+                }
+                toAppendBool += `>Categorical
+                                            </label>
+                                        </div>
+                                    </div>`
+                if (missing_values[column]) {
+                    toAppendBool += `<div class="row"><div class="col-md-5">
+                                    <p>Contains missing values.<\p></div><div class="col-md-4">
+                                    <select id="${column}-missing-values" name="${column}" class="selectpicker" style="display:block !important;">
+                                        <option value="drop">Drop Missing Rows</option>
+                                        <option value="constant">Constant Fill Value</option>
+                                        <option value="synthetic">Synthetically Fill</option>
+                                    </select></div>
+                                    <div class="col-md-1"><input type="text" id="${column}-fill-value" name="${column}" value="0" size="6" hidden></div></div>`;
+                }
+                toAppendBool += `</div>`;
+                if (toggle == 0) {
+                    toggle = 1;
+                }
+                else {
+                    toggle = 0;
+                }
+            });
+            $('#columnsModal #column_names').append(toAppendBool);
+            var modal = document.getElementById('columnsModal');
+            var modal_checkboxes = modal.querySelectorAll("input[type='checkbox']")
+            var missing_dropdowns = modal.querySelectorAll("select");
+            missing_dropdowns = Array.from(missing_dropdowns).filter(function(selectElement) {
+                return selectElement.id !== 'select-class';
+            });
+            let classOptionExists = false;
+            column_names.forEach(function(name) {
+                var option = $('<option></option>').val(name).text(name.replace(/^\w/, c => c.toUpperCase()));
+                $('#select-class').append(option);
+
+                if (name.toLowerCase() === 'class') {
+                    option.prop('selected', true);
+                    classOptionExists = true;
+                }
+            });
+            if (!classOptionExists) {
+                $('#select-class').prop('selectedIndex', -1);
+            }
+            $("#select-class").selectpicker('refresh');
+
+            modal_checkboxes.forEach(function(checkbox) {
+                checkbox.addEventListener('click', function() {
+                    if (!this.checked) {
+                        var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
+                        radios.forEach(function(radio) {
+                            radio.disabled = true;
+                        });
+                        var selectpickers = modal.querySelectorAll("select[name='" + this.id + "']");
+                        selectpickers.forEach(function(selectpicker) {
+                            $(selectpicker).prop('disabled', true);
+                        });
+                        var texts = modal.querySelectorAll("input[type='text'][name='" + this.id + "']");
+                        texts.forEach(function(text) {
+                            text.disabled = true;
+                        });
+                    } else {
+                        var radios = modal.querySelectorAll("input[type='radio'][name='" + this.id + "']");
+                        radios.forEach(function(radio) {
+                            radio.disabled = false;
+                        });
+                        var selectpickers = modal.querySelectorAll("select[name='" + this.id + "']");
+                        selectpickers.forEach(function(selectpicker) {
+                            $(selectpicker).prop('disabled', false);
+                        });
+                        var texts = modal.querySelectorAll("input[type='text'][name='" + this.id + "']");
+                        texts.forEach(function(text) {
+                            text.disabled = false;
+                        });
+                    }
+                });
+            });
+
+            missing_dropdowns.forEach(function(dropdown) {
+                dropdown.addEventListener('change', function(event) {
+                    let select_id = event.target.id.slice(0, -15);
+                    let text_id = select_id + '-fill-value'
+                    if (event.target.value === 'constant') {
+                        if (document.getElementById(select_id+'-categorical').checked) { //Change default value for categorical variables
+                            document.getElementById(text_id).value = 'Unknown';
+                        } else {
+                            document.getElementById(text_id).value = '0';
+                        }
+                        document.getElementById(text_id).removeAttribute('hidden');
+                    } else {
+                        document.getElementById(text_id).setAttribute('hidden', true);
+                    }
+                });
+            });
+
+            $("#select-class").on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
+                $('#select-class').closest('.bootstrap-select').removeClass('highlighted');
+            });
+        }
 
         function showColumns(data_types, missing_values) {
             let toAppendBool = "";
@@ -847,6 +809,8 @@ foreach ($metadata as $field => $attributes) {
             window.location
         });
 
+
+
         function delete_report(uuid){
             let confirmedDeletion = confirm("Are you sure you want to delete this report? This action is irreversible.");
             if (confirmedDeletion) {
@@ -859,6 +823,7 @@ foreach ($metadata as $field => $attributes) {
                     success: function(data) {
                         if (data.success) {
                             let user_uuid = null;
+                            console.log(email);
                             $.ajax({
                                 url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
                                 method: 'get',
@@ -924,52 +889,160 @@ foreach ($metadata as $field => $attributes) {
             }
         } // deleteReport
 
-/*        // Deletes uploaded file from CLEARML
-        function deleteUploadedFileIfNeeded() {
-            if (!uploaded_to_clearml || !uploaded_filename) return;
+        $('#submit-to-automl').click(function() {
+            if(confirm("Are you sure you want to submit this data for processing?")){
+                toggleLoadingScreenOverlay()
+                let error = 0;
+                //let form = $('#column_names').serializeArray();
+                let form = [];
+                let class_column = $('#select-class').val();
+                if (class_column == null || class_column === 'no-class-column-selected') {
+                    if(!confirm("You have not selected a class column, which will limit your potential models to only unsupervised clustering. Continue?")){
+                        $('#select-class').closest('.bootstrap-select').addClass('highlighted'); //Highlight the selectpicker to emphasize to user
+                        error = 1;
+                    }
+                }
+                $('.form-check-input').each(function(index, element) {
+                    if ($(element).attr('type') === 'checkbox') {
+                        if (element.id === class_column) {
+                            if (!$(element).is(':checked')) {
+                                showError('Your chosen class column, "'+element.id+'", must be selected in the column list.');
+                                error = 1;
+                                return;
+                            }
+                        }
+                        let checked_type = document.querySelector('input[name="'+element.id+'"]:checked').id;
+                        let type = checked_type.substring(checked_type.lastIndexOf('-')+1);
+                        if ((element.id === class_column ) && (type === 'float' || type === 'categorical')) {
+                            showError('Your chosen class column, "'+element.id+'", must be of type bool or integer.');
+                            error = 1;
+                            return;
+                        }
+                        if (document.getElementById(element.id+'-missing-values')) { //If there's missing values to deal with
+                            let fill_method = document.getElementById(element.id+'-missing-values').value;
+                            let fill_value = null;
+                            if (fill_method === 'constant') {
+                                fill_value = document.getElementById(element.id+'-fill-value').value;
+                                if (type === 'integer') {
+                                    if (Number.isInteger(Number(fill_value))) {
+                                        fill_value = Number(fill_value);
+                                    } else {
+                                        showError('Fill value for column '+element.id+' not valid for type integer.');
+                                        error = 1;
+                                        return;
+                                    }
+                                }
+                                else if (type === 'float') {
+                                    if (!isNaN(Number(fill_value)) && (Number.isFinite(Number(fill_value)))) {
+                                        fill_value = Number(fill_value);
+                                    } else {
+                                        showError('Fill value for column '+element.id+' not valid for type float.');
+                                        error = 1;
+                                        return;
+                                    }
+                                }
+                                else if (type === 'bool') {
+                                    if (fill_value === 'true' || fill_value === '1' || fill_value === 'True' || fill_value === 'TRUE') {
+                                        fill_value = 1;
+                                    } else if (fill_value === 'false' || fill_value === '0' || fill_value === 'False' || fill_value === 'FALSE'){
+                                        fill_value = 0;
+                                    } else {
+                                        showError('Fill value for column '+element.id+' not valid for type bool.');
+                                        error = 1;
+                                        return;
+                                    }
+                                } //Don't need to check categorical type, because any entry would be valid for string
+                            }
+                            if (element.id === class_column) {
+                                form.push({column:element.id, data_type:type, checked:$(element).is(':checked'), missing:fill_method, fill_value:fill_value, class:true})
+                            }
+                            else {
+                                form.push({column:element.id, data_type:type, checked:$(element).is(':checked'), missing:fill_method, fill_value:fill_value})
+                            }
+                        }
+                        else {
+                            if (element.id === class_column) {
+                                form.push({column:element.id, data_type:type, checked:$(element).is(':checked'), missing:null, fill_value:null, class:true})
+                            }
+                            else {
+                                form.push({column:element.id, data_type:type, checked:$(element).is(':checked'), missing:null, fill_value:null})
+                            }
+                        }
+                        // } else {
+                        //     form.push({column:element.id, data_type:'none', checked:false}) //If dropped column, update actions
+                        // }
 
-            $.ajax({
-                url: `${classifyURL}/users/getUserFromEmail?email=${user_email}`,
-                method: 'GET',
-                success: function(data) {
-                    const user_uuid = data.user_id;
+                    }
+                });
+                if (error === 1) {
+                    toggleLoadingScreenOverlay()
+                    return null;
+                }
+                else if (currentFile !== null) {
                     $.ajax({
-                        url: `${api_url}/delete_dataset`,
+                        url: '<?= $api_url ?>/change_column_types',
                         type: 'POST',
                         data: JSON.stringify({
-                            filename: uploaded_filename,
-                            uuid: user_uuid
+                            'filename': currentFile,
+                            'data_types': JSON.stringify(form)
                         }),
                         contentType: 'application/json; charset=utf-8',
                         success: function(data) {
-                            if (data.success) {
-                                console.log("Dataset deleted successfully.");
-                            } else {
-                                console.log("Failed to delete dataset:", data.message);
+                            if (data.success == false) {
+                                toggleLoadingScreenOverlay()
+                                showError(data.message);
+                                return null;
                             }
+                            else {
+                                let column_types_updated = data.data_types;
+                                $.ajax({ //Update table with column changes so they can be applied to test set if necessary
+                                    url: '<?= $classifyURL ?>/reports/set-column_changes',
+                                    type: 'POST',
+                                    data: {
+                                        'filename': currentFile,
+                                        'column_changes': JSON.stringify(column_types_updated)
+                                    },
+                                    success: function(data) {
+                                        if (data.success == false) {
+                                            toggleLoadingScreenOverlay()
+                                            showError(data.message);
+                                            return null;
+                                        }
+                                        else {
+                                            showSuccess(data.message);
+                                            $('#gotoMLOpts').show();
+                                            $('#submit-to-automl').hide();
+                                            uploaded_to_clearml=true;
+                                            toggleLoadingScreenOverlay()
+                                        }
+
+                                    },
+                                    error: function (xhr, status, error) {
+                                        toggleLoadingScreenOverlay()
+                                        showError("Error communicating with the server.");
+                                        return null;
+                                    }
+                                });
+                            }
+
                         },
-                        error: function() {
-                            console.log("Error deleting dataset.");
+                        error: function (xhr, status, error) {
+                            toggleLoadingScreenOverlay()
+                            showError("Error communicating with the server.");
+                            return null;
                         }
                     });
-                },
-                error: function() {
-                    console.log("Failed to get user UUID.");
+
+                } else {
+                    toggleLoadingScreenOverlay()
+                    showError("Please upload a file first.");
                 }
-            });
-
-            uploaded_to_clearml = false; // prevent duplicate deletion
-        }
-
-        // Bind to all modal close events
-        $('.modal').on('hidden.bs.modal', function () {
-            deleteUploadedFileIfNeeded();
+            }
         });
 
-        // Bind to page refresh/leave
-        window.addEventListener("beforeunload", function (e) {
-            deleteUploadedFileIfNeeded();
-        });*/
+        $('#gotoMLOpts').click(function() {
+            window.location
+        });
 
         function toggleLoadingScreenOverlay() {
             if ($('#cover-spin').is(':visible')){
