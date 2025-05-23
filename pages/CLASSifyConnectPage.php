@@ -128,6 +128,37 @@ foreach ($metadata as $field => $attributes) {
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <a id="add-data-btn" data-toggle="modal" data-target="#classifierModal">
+                        <div class="center-home-sects">
+                            <button type="button" class="btn btn-primary" id="go-to-classifier">Next</button>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- choose classifier modal -->
+    <div class="modal fade" id="classifierModal" tabindex="-1" role="dialog" aria-labelledby="classifierModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="classifierModalLabel">Preview&nbsp;</h5>
+                    <div class="spinner-border" role="status" id="spinner" style="display:none;">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="classifierModalBody">
+                    <label for="class-selector">Select a column for your classifier: </label>
+                    <select id="class-selector" name="class-selector"> -->
+                        <!-- This will be filled with option tags for each column header -->
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                     <a id="add-data-btn" data-toggle="modal" data-target="#columnsModal">
                         <div class="center-home-sects">
                             <button type="button" class="btn btn-primary" id="go-to-columns">Next</button>
@@ -227,6 +258,7 @@ foreach ($metadata as $field => $attributes) {
         var currentFile = null;
         var report_uuid = null;
         var uploaded_to_clearml=false;
+        var parsed = null;
 
         $(function() {
 
@@ -312,7 +344,7 @@ foreach ($metadata as $field => $attributes) {
                     url: '<?= $classifyURL ?>/reports/delete',
                     type: 'POST',
                     data: {
-                        'uuid': report_uuid,
+                        'uuid': user_uuid,
                         'filename': filename_no_uuid
                     },
                     success: function(data) {
@@ -426,8 +458,8 @@ foreach ($metadata as $field => $attributes) {
             var form_data = new FormData();
 
             // Create a Blob from the parsed CSV string
-            const csvBlob = new Blob([moduleData], { type: 'text/csv' });
-            console.log(moduleData);
+            const csvBlob = new Blob([parsed], { type: 'text/csv' });
+            console.log(parsed);
             console.log(csvBlob);
             // Append the Blob and other fields to the form data
             form_data.append('file', csvBlob, currentFile);
@@ -437,7 +469,7 @@ foreach ($metadata as $field => $attributes) {
             currentFile = currentFile.replace('.csv', '_'+user_uuid+'.csv');
             console.log(currentFile);
 
-/*            // Create a temporary link element
+            /*// Create a temporary link element
             const link = document.createElement('a');
             link.href = URL.createObjectURL(csvBlob);
             link.download = filename;
@@ -688,8 +720,6 @@ foreach ($metadata as $field => $attributes) {
             window.location
         });
 
-
-
         function delete_report(uuid){
             let confirmedDeletion = confirm("Are you sure you want to delete this report? This action is irreversible.");
             if (confirmedDeletion) {
@@ -917,6 +947,28 @@ foreach ($metadata as $field => $attributes) {
                     showError("Please upload a file first.");
                 }
             }
+        });
+
+        $('#classifierModal').on('shown.bs.modal', function () {
+            console.log('classifierModal');
+            let dropdown = document.getElementById('class-selector');
+
+            let fields_sorted = <?= json_encode($fieldsByInstrument)?>;
+
+            for(const [key, value] of Object.entries(fields_sorted)) {
+                if (document.getElementById(key).checked) {
+                    for(let i=0; i<value.length; i++) {
+                        let newElement = document.createElement('option');
+                        newElement.value = value[i];
+                        newElement.innerHTML = value[i];
+                        dropdown.appendChild(newElement);
+                    }
+                }
+            }
+        });
+
+        $('#classifierModal').on('hidden.bs.modal', function () {
+            parsed = parseCSVWithNewNames(moduleCSV, document.getElementById('class-selector').value);
         });
 
         $('#gotoMLOpts').click(function() {
