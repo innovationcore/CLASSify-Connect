@@ -241,6 +241,8 @@ foreach ($metadata as $field => $attributes) {
                         // this needs work, probably should create a modal for it
                         alert("You have not accepted the CLASSify terms of service. Please navigate to https://data.ai.uky.edu/classify/ and log in for the first time to accept terms.");
                         $('#formsModal').hide();
+                    } else {
+                        user_uuid = data.user_id;
                     }
                 },
                 error : function(request,error) {
@@ -314,7 +316,6 @@ foreach ($metadata as $field => $attributes) {
                         'filename': filename_no_uuid
                     },
                     success: function(data) {
-                        let user_uuid = null;
                         $.ajax({
                             url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
                             method: 'get',
@@ -426,13 +427,28 @@ foreach ($metadata as $field => $attributes) {
 
             // Create a Blob from the parsed CSV string
             const csvBlob = new Blob([moduleData], { type: 'text/csv' });
-
+            console.log(moduleData);
+            console.log(csvBlob);
             // Append the Blob and other fields to the form data
             form_data.append('file', csvBlob, currentFile);
             form_data.append('user_uuid', user_uuid);
             // get filename from uploaded file
             //currentFile = file.name;
             currentFile = currentFile.replace('.csv', '_'+user_uuid+'.csv');
+            console.log(currentFile);
+
+            // Create a temporary link element
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(csvBlob);
+            link.download = filename;
+
+// Append to the document and trigger the download
+            document.body.appendChild(link);
+            link.click();
+
+// Clean up
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
 
             $.ajax({
                 url: '<?= $classifyURL ?>/reports/submit',
@@ -822,7 +838,7 @@ foreach ($metadata as $field => $attributes) {
                     },
                     success: function(data) {
                         if (data.success) {
-                            let user_uuid = null;
+                            user_uuid = null;
                             console.log(email);
                             $.ajax({
                                 url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
