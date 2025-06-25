@@ -10,6 +10,12 @@
             "institution": "University of Kentucky - CAAI"
         }
     ],
+    "routes": {
+        "classify_proxy": {
+            "handler": "CAAIModules\\CLASSifyConnect::handleApiProxyRequest",
+            "methods": ["GET", "POST"]
+        }
+    },
     "system-settings": [],
     "project-settings": [
         {
@@ -40,6 +46,13 @@
                     "key": "collaboration-request",
                     "name": "If you would like to use the CLASSify Connect plugin but do not have CLASSify access, you may fill out the <a href='https://redcap.uky.edu/redcap/surveys/?s=K7WTCDH37AXLEKNM' target='_blank'>Center for Applied AI Collaboration Request</a> form for review by our team. ",
                     "type": "descriptive"
+                },
+                {
+                    "key": "api_key",
+                    "name": "CLASSify API Key",
+                    "required": true,
+                    "type": "text",
+                    "repeatable": false
                 }
             ]
         }

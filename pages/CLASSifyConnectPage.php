@@ -2,6 +2,8 @@
 $page = 'home';
 global $classifyURL;
 global $api_url;
+global $api_key;
+global $proxy;
 
 $selectedForms = isset($_POST['selectedForms']) ? $_POST['selectedForms'] : [];
 $instruments = REDCap::getInstrumentNames();
@@ -53,23 +55,23 @@ foreach ($metadata as $field => $attributes) {
     </style>
 
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
-        <h1 class="h4"><b>CLASSify</b></h1>
+        <h1 class="h4">Data - <span class="text-muted">Upload</span></h1>
     </div>
 
     <div class="row selection-btns">
         <div class="col-md-6">
-            <a id="form-select-btn" data-toggle="modal" data-target="#formsModal">
+            <a id="add-data-btn" data-bs-toggle="modal" data-bs-target="#uploadModal">
                 <div class="center-home-sects">
-                    <span><i class="fas fa-plus"></i></span><br>
-                    <h5>Upload Instrument Data</h5>
+                    <span><i class="fa fa-plus"></i></span><br>
+                    <h5>Add Data File</h5>
                 </div>
             </a>
         </div>
         <div class="col-md-6">
             <a id="view-all-btn" href="<?= $classifyURL?>/result" class="center-home-sects">
                 <div class="center-home-sects">
-                    <span><i class="fas fa-paper-plane"></i></span><br>
-                    <h5>Go to CLASSify</h5>
+                    <span><i class="fas fa-bars"></i></span><br>
+                    <h5>View All Data</h5>
                 </div>
             </a>
         </div>
@@ -92,163 +94,109 @@ foreach ($metadata as $field => $attributes) {
         </div>
     </div>
 
-    <!-- Form Selection Modal -->
-    <div class="modal fade" id="formsModal" tabindex="-1" role="dialog" aria-labelledby="formsModalLabel" aria-hidden="true">
+    <!-- choose features modal -->
+    <div class="modal fade" id="columnsModal" tabindex="-1" role="dialog" aria-labelledby="columnsModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="formsModalLabel">Form Selection&nbsp;</h5>
+                    <h5 class="modal-title" id="columnsModalLabel">Preview&nbsp;</h5>
                     <div class="spinner-border" role="status" id="spinner" style="display:none;">
                         <span class="sr-only">Loading...</span>
                     </div>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div class="modal-body" id="formsModalBody">
-                    <h5>Choose which forms/instruments to include in uploaded dataset.</h5>
-                    <h6>Selecting a form here allows you to pick which columns you'd like to include in the next step.</h6>
+                <div class="modal-body" id="columnsModalBody">
+                    <h5>Choose which columns to include in uploaded dataset.</h5>
+                    <h6>You may also change data types of each column here.</h6>
+                    <h6>Categorical variables will be one-hot encoded.</h6>
                     <div class="row">
                         <div class="col-md-12">
-                            <form id="forms">
-                                <div id="form_names" class="columns-div">
-                                    <?php
-                                        foreach ($instruments as $key => $value) {
-                                            // Check if this instrument was previously selected
-                                            $checked = in_array($key, $selectedForms) ? "checked" : "";
-                                            echo "<h6><input name='selectedForms[]' class='instrument-selection' id='" . $key . "' type='checkbox' value='" . $key . "' $checked> " . $value . "</h6>";
-                                        }
-                                        echo "<label for='filename'><h6 style='padding-right: 2px;'>Filename for upload: </h6></label>";
-                                        echo "<input type='text' id='filename' value='redcap_upload.csv'></input>";
-                                    ?>
+                            <h6><b>Choose which column represents your class labels:</b></h6>
+                            <select id="select-class" class="selectpicker ms-2 me-1 mb-1" title="Choose classifier column" data-width="100%" data-live-search="true">
+                                <option value="no-class-column-selected" style="color:gray; font-style: italic;">No Class Column</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <form id="columns">
+                                <div id="column_names" class="columns-div">
+
                                 </div>
                             </form>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <a id="add-data-btn" data-toggle="modal" data-target="#classifierModal">
-                        <div class="center-home-sects">
-                            <button type="button" class="btn btn-primary" id="go-to-classifier">Next</button>
-                        </div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="submit-to-automl">Upload Dataset</button>
+                    <a href="<?= $classifyURL ?>/result" id="gotoMLOpts" type="button" class="btn btn-primary me-2" style="display:none;">
+                        <i class="fa fa-eye"></i> View Uploaded Data
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- choose classifier modal -->
-    <div class="modal fade" id="classifierModal" tabindex="-1" role="dialog" aria-labelledby="classifierModalLabel" aria-hidden="true">
+    <!-- upload file Modal -->
+    <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="classifierModalLabel">Preview&nbsp;</h5>
-                    <div class="spinner-border" role="status" id="spinner" style="display:none;">
-                        <span class="sr-only">Loading...</span>
+                <div class="modal-header" style="flex-wrap: wrap;">
+                    <h5 class="modal-title" id="uploadModalLabel">Upload Report</h5>
+                    <!--                    <div class="fa-solid fa-circle-info help-tooltip">-->
+                    <!--                        <span class="tooltip-text" id="help-tooltip-text">Tooltip text</span>-->
+                    <!--                    </div>-->
+                    <a id="site-help" class="fa fa-question-circle me-auto" aria-hidden="true" onmouseover="show_tooltip()" onmouseout="hide_tooltip()"></a>
+                    <div id="instruction-panel" class="instruction-panel"> <!-- This div contains the tooltip -->
+                        <h5>Tips for Uploading Reports:</h5>
+                        <ul>
+                            <li>Report must be in the .csv file format</li>
+                            <li>You will be able to select a class column on the next page</li>
+                            <ul>
+                                <li>If your class label is binary, ensure it only has values 0/1, yes/no, or TRUE/FALSE</li>
+                                <li>If the class label is multiclass, it must have integer values (0,1,2...)</li>
+                            </ul>
+                            <li>You will also be able to drop any unnecessary columns on the next page. It is recommended to drop any index or ID columns</li>
+                            <li>Rows with missing values can be handled through Classify in several ways</li>
+                            <ul>
+                                <li>For each column with missing values, you can choose to drop missing rows, synthetically fill, or use a constant fill value</li>
+                                <li>Any other method for handling missing data should be done before uploading to Classify</li>
+                            </ul>
+                            <li>Categorical string variables will be automatically one-hot encoded. Ordinal encodings (encoding categories as integers) should be done before uploading</li>
+                            <ul>
+                                <li>If you have a column with a high number of unique categories, it is recommended to drop this column or encode differently prior to upload</li>
+                            </ul>
+                        </ul>
                     </div>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <h6>(Not HIPAA-Compliant)</h6>
                 </div>
-                <div class="modal-body" id="classifierModalBody">
-                    <label for="class-selector">Select a column for your classifier: </label>
-                    <select id="class-selector" name="class-selector"> -->
-                        <!-- This will be filled with option tags for each column header -->
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <a id="add-data-btn" data-toggle="modal" data-target="#columnsModal">
-                        <div class="center-home-sects">
-                            <button type="button" class="btn btn-primary" id="go-to-columns">Next</button>
+                <div class="modal-body" id="uploadModalBody">
+                    <div class="col-lg-12 mb-3 form-floating">
+                        <div class="custom-file" id="customFile">
+                           <!-- <input type="file" class="form-control custom-file-input" accept=".csv" id="uploadReportFile" aria-describedby="fileHelp">-->
+                            <?php
+                                foreach ($instruments as $key => $value) {
+                                    // Check if this instrument was previously selected
+                                    $checked = in_array($key, $selectedForms) ? "checked" : "";
+                                    echo "<h6><input name='selectedForms[]' class='instrument-selection' id='" . $key . "' type='checkbox' value='" . $key . "' $checked> " . $value . "</h6>";
+                                }
+                                echo "<label for='filename'><h6 style='padding-right: 2px;'>Filename for upload: </h6></label>";
+                                echo "<input type='text' id='filename' value='redcap_upload.csv'></input>";
+                            ?>
                         </div>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-<!-- choose features modal -->
-<div class="modal fade" id="columnsModal" tabindex="-1" role="dialog" aria-labelledby="columnsModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="columnsModalLabel">Preview&nbsp;</h5>
-                <div class="spinner-border" role="status" id="spinner" style="display:none;">
-                    <span class="sr-only">Loading...</span>
-                </div>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="columnsModalBody">
-                <h5>Choose which columns to include in uploaded dataset.</h5>
-                <h6>You may also change data types of each column here.</h6>
-                <h6>Categorical variables will be one-hot encoded.</h6>
-                <div class="row">
-                    <div class="col-md-12">
-                        <h6><b>Choose which column represents your class labels:</b></h6>
-                        <select id="select-class" class="selectpicker ms-2 me-1 mb-1" title="Choose classifier column" data-width="100%">
-                            <option value="no-class-column-selected" style="color:gray; font-style: italic;">No Class Column</option>
-                        </select>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <form id="columns">
-                            <div id="column_names" class="columns-div">
-
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="submit-to-automl">Upload Dataset</button>
-                <a href="<?= $classifyURL ?>/result" id="gotoMLOpts" type="button" class="btn btn-primary me-2" style="display:none;">
-                    <i class="fa fa-eye"></i> View Uploaded Data
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-    <!-- Notification Modal -->
-    <div class="modal fade" id="notificationModal" tabindex="-1" role="dialog" aria-labelledby="notificationModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="notificationModalLabel"></h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body" id="notificationModalBody"></div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="submitUploadBtn">Preview</button>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Error Modal -->
-    <div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title text-danger" id="errorModalLabel">Error!</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body" id="errorModalBody"></div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="cover-spin"></div>
 
     <script type="text/javascript">
         var collection = {};
@@ -259,29 +207,21 @@ foreach ($metadata as $field => $attributes) {
         var report_uuid = null;
         var uploaded_to_clearml=false;
         var parsed = null;
-
+        const CLASSIFY_BASE_URL = '<?= $classifyURL ?>'; // The base URL for your external API
+        
         $(function() {
 
         }); //document ready
 
-        $('#formsModal').on('shown.bs.modal', function () {
-            $.ajax({
-                url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
-                method: 'get',
-                success: function(data) {
-                    if (!data.accepted_terms) { //If user has not accepted terms yet, show modal
-                        // this needs work, probably should create a modal for it
-                        alert("You have not accepted the CLASSify terms of service. Please navigate to https://data.ai.uky.edu/classify/ and log in for the first time to accept terms.");
-                        $('#formsModal').hide();
-                    } else {
-                        user_uuid = data.user_id;
-                    }
-                },
-                error : function(request,error) {
-                    console.error("Request: "+JSON.stringify(request));
-                }
-            });
+        // Change this so that it rejects user if they haven't input an API key.
+        $('#uploadModal').on('shown.bs.modal', function () {
+            console.log('forms modal shown');
         });
+
+        function getSelectedForms() {
+            return Array.from(document.querySelectorAll("input.instrument-selection:checked"))
+                .map(input => input.value);
+        }
 
         function show_tooltip() {
             var panel = document.getElementById("instruction-panel");
@@ -335,72 +275,63 @@ foreach ($metadata as $field => $attributes) {
             return [headers.join(','), ...updatedRows.map(row => row.join(','))].join('\n');
         }
 
+        function generateCSVFromData(dataArray) {
+            if (!dataArray.length) return '';
+
+            const headers = [...new Set(dataArray.flatMap(obj => Object.keys(obj)))];
+            const csvRows = [headers.join(',')];
+
+            for (const row of dataArray) {
+                const values = headers.map(h => {
+                    const val = row[h] ?? '';
+                    return `"${String(val).replace(/"/g, '""')}"`; // escape quotes
+                });
+                csvRows.push(values.join(','));
+            }
+
+            return csvRows.join('\n');
+        }
+
+
         $('#columnsModal').on('hidden.bs.modal', function () {
             document.getElementById('column_names').innerHTML = '';
+            $('#select-class').empty();
+            $('#select-class').append('<option value="no-class-column-selected" style="color:gray; font-style: italic;">No Class Column</option>');
+            $("#select-class").selectpicker('refresh');
             if (!uploaded_to_clearml) {
-                let filename_no_uuid = currentFile.substring(0, currentFile.lastIndexOf('_')) + currentFile.substring(currentFile.lastIndexOf('.'));                console.log('Current File at Columns Modal hidden.bs.modal: ' + currentFile);
-                console.log('Filename no UUID: ' + filename_no_uuid);
-                $.ajax({ //Delete report to prevent clearml dataset error
-                    url: '<?= $classifyURL ?>/reports/delete',
-                    type: 'POST',
+                $.ajax({
+                    url: '<?= $classifyURL ?>/actions/update_action',
+                    method: 'POST',
                     data: {
-                        'uuid': user_uuid,
-                        'filename': filename_no_uuid
+                        'report_uuid': report_uuid,
+                        'action': 'Deleted report'
                     },
-                    success: function(data) {
-                        $.ajax({
-                            url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
-                            method: 'get',
-                            success: function(data) {
-                                user_uuid = data.user_id;
-                                $.ajax({
-                                    url: '<?= $api_url ?>/delete_dataset',
-                                    type: 'POST',
-                                    data: JSON.stringify({
-                                        'filename': filename_no_uuid,
-                                        'uuid': user_uuid
-                                    }),
-                                    contentType: 'application/json; charset=utf-8',
-                                    success: function(data) {
-                                        if (data.success){
-                                            $.ajax({
-                                                url: '<?= $classifyURL ?>/actions/update_action',
-                                                method: 'POST',
-                                                data: {
-                                                    'report_uuid': report_uuid,
-                                                    'user_uuid': user_uuid,
-                                                    'action': 'Deleted report'
-                                                },
-                                                success: function(res) {
-                                                    if (res.success) {
-                                                    } else {
-                                                        console.log(res.message);
-                                                    }
-                                                },
-                                                error: function(xhr, ajaxOptions, thrownError) {
-                                                    console.log('Error communicating with the server');
-                                                }
-                                            });
-                                        } else {
-                                            console.log(data.message);
-                                        }
-
-                                    },
-                                    error: function (xhr, status, error) {
-                                        console.log("Error communicating with the server.");
-                                        return null;
+                    success: function(res) {
+                        if (res.success) {
+                            $.ajax({ //Delete report to prevent clearml dataset error
+                                url: '<?= $classifyURL ?>/reports/delete',
+                                type: 'POST',
+                                data: {
+                                    'report_uuid': report_uuid
+                                },
+                                success: function(data) {
+                                    if (data.success){
+                                    } else {
+                                        showError(data.message);
                                     }
-                                });
-                            },
-                            error: function(xhr, request, error) {
-
-                                console.log('User not found.');
-                            }
-                        });
+                                },
+                                error: function (xhr, status, error) {
+                                }
+                            });
+                        } else {
+                            showError(res.message);
+                        }
                     },
-                    error: function (xhr, status, error) {
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        showError('Error communicating with the server');
                     }
                 });
+
             }
             else { //Already uploaded to clearml
                 $('#gotoMLOpts').hide();
@@ -409,163 +340,141 @@ foreach ($metadata as $field => $attributes) {
             }
         });
 
-        // Since we're using a different upload method, we change this to show columns modal
-        //$('#submitUploadBtn').click(function(){
-        $('#columnsModal').on('shown.bs.modal', function () {
-            currentFile = document.getElementById('filename').value;
+        // This needs to be updated to create a file from the selected data in the REDCap Project.
+        $('#submitUploadBtn').click(function(){
+            console.log('submit clicked')
+            var fileName = $(this).val().split('\\').pop();
+            $('#uploadReportFileLabel').html(fileName);
 
+            const selectedForms = getSelectedForms();
+            const combinedData = [];
+
+            selectedForms.forEach(form => {
+                if (moduleByIns[form]) {
+                    //const flattened = flattenRecords(moduleByIns[form]);
+                    combinedData.push(...moduleByIns[form]);
+                }
+            });
+
+            if (combinedData.length === 0) {
+                showError('No data found for selected forms.');
+                return null;
+            }
+
+            console.log('user_uuid: ' + user_uuid);
+
+            const csv = generateCSVFromData(combinedData);
+
+            let filename = document.getElementById('filename').value;
+            filename = filename.replace(/\s+/g, '_');
             // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
-            currentFile = currentFile.endsWith('.csv') ? currentFile : currentFile + '.csv';
+            filename = filename.endsWith('.csv') ? filename : filename + '.csv';
 
-            console.log('Current File at submitUploadBtn: ' + currentFile)
-            console.log('User UUID at submitUploadBtn: ' + user_uuid)
+            const blob = new Blob([csv], { type: 'text/csv' });
+            let file = new File([blob], filename, { type: 'text/csv' });
 
-            /*            let uploadFile = $('#uploadReportFile');
-                        if (uploadFile.val() === null || uploadFile.val() === '') {
-                            showError('Please upload a .csv file');
-                            return;
-                        }
-                        var file = uploadFile[0].files[0];
-                        if (file.name.includes(' ')) { //If space in file name, remove it
-                            file = new File(
-                                [file], // File content remains the same
-                                file.name.replace(/\s+/g, '_'), // Replace spaces with underscores
-                                { type: file.type } // Preserve the file type
-                            );
-                        }
-                        if (!file.name.endsWith('.csv')) {
-                            showError('File must be a .csv');
-                            return;
-                        }
+            let uploadFile = $('#uploadReportFile');
+            if (uploadFile.val() === null || uploadFile.val() === '') {
+                showError('Please upload a .csv file');
+                return;
+            }
 
-                        if (file.name.length > 104) { //100 characters + .csv
-                            showError('File name exceeds maximum length. Reduce name to less than 100 characters');
-                            return;
-                        }
+            if (file.name.includes(' ')) { //If space in file name, remove it
+                file = new File(
+                    [file], // File content remains the same
+                    file.name.replace(/\s+/g, '_'), // Replace spaces with underscores
+                    { type: file.type } // Preserve the file type
+                );
+            }
+            if (!file.name.endsWith('.csv')) {
+                showError('File must be a .csv');
+                return;
+            }
 
-                        if (file === undefined) {
-                            showError('Unknown file error encountered');
-                            return;
-                        }
-                        let max_filesize = 500*1024*1024; //500 MB
-                        if (file.size > max_filesize) {
-                            showError('File is too large. Max filesize is 500 MB');
-                            return;
-                        }*/
+            if (file.name.length > 104) { //100 characters + .csv
+                showError('File name exceeds maximum length. Reduce name to less than 100 characters');
+                return;
+            }
+
+            if (file === undefined) {
+                showError('Unknown file error encountered');
+                return;
+            }
+            let max_filesize = 500*1024*1024; //500 MB
+            if (file.size > max_filesize) {
+                showError('File is too large. Max filesize is 500 MB');
+                return;
+            }
 
             toggleLoadingScreenOverlay();
 
+            console.log(csv);
+
             var form_data = new FormData();
+            form_data.append('file', csv); // from the aaron version
 
             // Create a Blob from the parsed CSV string
-            const csvBlob = new Blob([parsed], { type: 'text/csv' });
-            console.log(parsed);
-            console.log(csvBlob);
-            // Append the Blob and other fields to the form data
-            form_data.append('file', csvBlob, currentFile);
-            form_data.append('user_uuid', user_uuid);
+            //const csvBlob = new Blob([csv], { type: 'text/csv' });
+            //console.log(csvBlob);
+            //form_data.append('file', csvBlob);
+
+            console.log(<?= json_encode($api_key[0]) ?>);
+            console.log('<?= $classifyURL ?>');
+
             // get filename from uploaded file
-            //currentFile = file.name;
-            currentFile = currentFile.replace('.csv', '_'+user_uuid+'.csv');
-            console.log(currentFile);
-
-            /*// Create a temporary link element
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(csvBlob);
-            link.download = filename;
-
-            // Append to the document and trigger the download
-            document.body.appendChild(link);
-            link.click();
-
-            // Clean up
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);*/
             $.ajax({
-                url: '<?= $api_url ?>/verify_dataset',
-                type: 'POST',
+                url: '<?= $proxy ?>',
+                method: 'post',
+                dataType: 'json',
                 data: form_data,
-                contentType: false,
                 processData: false,
-                success: function (data) {
-                    if (data.success) {
+                contentType: false,
+                headers: {
+                    'X-Proxy-Target-Url': '<?= $classifyURL ?>/reports/submit', // The actual external API endpoint
+                },
+                success: function(res) {
+                    if (res.success) {
+                        let column_types = res.column_types;
+                        report_uuid = res.report_uuid;
                         $.ajax({
-                            url: '<?= $classifyURL ?>/reports/submit',
-                            method: 'post',
-                            dataType: 'json',
-                            data: form_data,
-                            processData: false,
-                            contentType: false,
-                            success: function (res) {
+                            url: '<?= $proxy ?>',
+                            method: 'POST',
+                            data: {
+                                'report_uuid': report_uuid,
+                                'action': 'Uploaded dataset'
+                            },
+                            headers: {
+                                'X-Proxy-Target-Url': '<?= $classifyURL ?>/actions/update_action'
+                            },
+                            success: function(res) {
                                 if (res.success) {
-                                    report_uuid = res.report_uuid;
-                                    filename = res.file_name;
-                                    console.log(user_uuid + " at update action");
-                                    $.ajax({
-                                        url: '<?= $classifyURL ?>/actions/update_action',
-                                        method: 'POST',
-                                        data: {
-                                            'report_uuid': report_uuid,
-                                            'user_uuid': user_uuid,
-                                            'action': 'REDCap Data Upload',
-                                            'api_key': '7217be72-156e-4bda-9798-d7d6c8fc59da'
-                                        },
-                                        success: function (res) {
-                                            if (res.success) {
-                                                $.ajax({
-                                                    url: '<?= $api_url ?>/get_column_types',
-                                                    type: 'POST',
-                                                    data: form_data,
-                                                    contentType: false,
-                                                    processData: false,
-                                                    success: function (data) {
-                                                        toggleLoadingScreenOverlay();
-                                                        showSuccess('Dataset uploaded');
-
-                                                        // Get either the default name, or the user set name
-                                                        currentFile = document.getElementById('filename').value;
-
-                                                        // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
-                                                        currentFile = currentFile.endsWith('.csv') ? currentFile : currentFile + '.csv';
-
-                                                        console.log("Current file before columnsModal.show: " + currentFile);
-
-                                                        //$('#uploadModal').modal('hide');
-                                                        $('#columnsModal').modal('show');
-                                                        showColumns(data.data_types, data.missing_values);
-                                                    },
-                                                    error: function (xhr, status, error) {
-                                                        showError("Error communicating with the server.");
-                                                        toggleLoadingScreenOverlay();
-                                                        return null;
-                                                    }
-                                                });
-                                            } else {
-                                                showError(res.message);
-                                                toggleLoadingScreenOverlay();
-                                            }
-                                        },
-                                        error: function (xhr, ajaxOptions, thrownError) {
-                                            toggleLoadingScreenOverlay();
-                                            showError('Error communicating with the server');
-                                        }
-                                    });
-
+                                    toggleLoadingScreenOverlay();
+                                    showSuccess('Dataset uploaded');
+                                    $('#uploadModal').modal('hide');
+                                    $('#columnsModal').modal('show');
+                                    showColumns(column_types['data_types'], column_types['missing_values']);
                                 } else {
                                     showError(res.message);
                                     toggleLoadingScreenOverlay();
                                 }
                             },
-                            error: function (xhr, ajaxOptions, thrownError) {
+                            error: function(xhr, ajaxOptions, thrownError) {
                                 toggleLoadingScreenOverlay();
                                 showError('Error communicating with the server');
                             }
                         });
+
+                    } else {
+                        showError(res.message);
+                        toggleLoadingScreenOverlay();
                     }
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    toggleLoadingScreenOverlay();
+                    showError('Error communicating with the server');
                 }
             });
         }); // upload
-
 
         function showColumns(data_types, missing_values) {
             console.log(data_types);
@@ -719,84 +628,6 @@ foreach ($metadata as $field => $attributes) {
         $('#gotoMLOpts').click(function() {
             window.location
         });
-
-        function delete_report(uuid){
-            let confirmedDeletion = confirm("Are you sure you want to delete this report? This action is irreversible.");
-            if (confirmedDeletion) {
-                $.ajax({
-                    url: '<?= $classifyURL ?>/reports/delete',
-                    type: 'POST',
-                    data: {
-                        'uuid': uuid
-                    },
-                    success: function(data) {
-                        if (data.success) {
-                            user_uuid = null;
-                            console.log(email);
-                            $.ajax({
-                                url: `<?= $classifyURL ?>/users/getUserFromEmail?email=${email}`,
-                                method: 'get',
-                                success: function(data) {
-                                    user_uuid = data.user_id;
-                                    $.ajax({
-                                        url: '<?= $api_url ?>/delete_dataset',
-                                        type: 'POST',
-                                        data: JSON.stringify({
-                                            'filename': filename,
-                                            'uuid': user_uuid
-                                        }),
-                                        contentType: 'application/json; charset=utf-8',
-                                        success: function(data) {
-                                            if (data.success){
-                                                let success_message = data.message;
-                                                $.ajax({
-                                                    url: '<?= $classifyURL ?>/actions/update_action',
-                                                    method: 'POST',
-                                                    data: {
-                                                        'report_uuid': uuid,
-                                                        'user_uuid': user_uuid,
-                                                        'action': 'Deleted report'
-                                                    },
-                                                    success: function(res) {
-                                                        if (res.success) {
-                                                            showSuccess(data.message);
-                                                            $('#collection').DataTable().ajax.reload();
-                                                        } else {
-                                                            console.log(res.message);
-                                                        }
-                                                    },
-                                                    error: function(xhr, ajaxOptions, thrownError) {
-                                                        console.log('Error communicating with the server');
-                                                    }
-                                                });
-                                            } else {
-                                                console.log(data.message);
-                                            }
-
-                                        },
-                                        error: function (xhr, status, error) {
-                                            console.log("Error communicating with the server.");
-                                            return null;
-                                        }
-                                    });
-                                },
-                                error: function(xhr, request, error) {
-
-                                    console.log('User not found.');
-                                }
-                            });
-                        } else {
-                            console.log(data.message);
-                            return null;
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        console.log("Error communicating with the server.");
-                        return null;
-                    }
-                });
-            }
-        } // deleteReport
 
         $('#submit-to-automl').click(function() {
             if(confirm("Are you sure you want to submit this data for processing?")){
