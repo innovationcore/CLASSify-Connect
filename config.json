@@ -10,12 +10,6 @@
             "institution": "University of Kentucky - CAAI"
         }
     ],
-    "routes": {
-        "classify_proxy": {
-            "handler": "CAAIModules\\CLASSifyConnect::handleApiProxyRequest",
-            "methods": ["GET", "POST"]
-        }
-    },
     "system-settings": [],
     "project-settings": [
         {
@@ -67,7 +61,34 @@
             }
         ]
     },
+    "api-actions": {
+        "reports-submit": {
+            "description": "submit a report to the CLASSify API",
+            "access": ["auth"]
+        },
+        "update-action": {
+            "description": "submit updated info to CLASSify API",
+            "access": ["auth"]
+        },
+        "reports-delete": {
+            "description": "delete an uploaded report",
+            "access": ["auth"]
+        },
+        "result": {
+            "description": "get a result from CLASSify API",
+            "access": ["auth"]
+        },
+        "set-column-changes": {
+            "description": "submit updated columns from the default created when report submitted",
+            "access": ["auth"]
+        },
+        "change-column-types": {
+            "description": "change the typings of the columns based on the changes made in the gui",
+            "access": ["auth"]
+        }
+    },
     "no-auth-pages": [
-        "classify-connection"
+        "classify-connection",
+        "proxy"
     ]
 }

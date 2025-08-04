@@ -1,9 +1,10 @@
 <?php
+/** @var \ExternalModules\AbstractExternalModule $module */
+
 $page = 'home';
 global $classifyURL;
 global $api_url;
 global $api_key;
-global $proxy;
 
 $selectedForms = isset($_POST['selectedForms']) ? $_POST['selectedForms'] : [];
 $instruments = REDCap::getInstrumentNames();
@@ -16,6 +17,11 @@ foreach ($metadata as $field => $attributes) {
     $fieldsByInstrument[$instrument][] = $field;
 }
 ?>
+    <script>
+        const ExternalModules = window.ExternalModules || {};
+        ExternalModules.CSRF_TOKEN = '<?= $module->getCSRFToken() ?>';
+    </script>
+
     <style>
         .selection-btns {
             margin: 0 10% 0 10%;
@@ -68,7 +74,7 @@ foreach ($metadata as $field => $attributes) {
             </a>
         </div>
         <div class="col-md-6">
-            <a id="view-all-btn" href="<?= $classifyURL?>/result" class="center-home-sects">
+            <a id="view-all-btn" href="https://classify.ai.uky.edu/result" class="center-home-sects">
                 <div class="center-home-sects">
                     <span><i class="fas fa-bars"></i></span><br>
                     <h5>View All Data</h5>
@@ -132,7 +138,7 @@ foreach ($metadata as $field => $attributes) {
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="submit-to-automl">Upload Dataset</button>
-                    <a href="<?= $classifyURL ?>/result" id="gotoMLOpts" type="button" class="btn btn-primary me-2" style="display:none;">
+                    <a href="https://classify.ai.uky.edu/result" id="gotoMLOpts" type="button" class="btn btn-primary me-2" style="display:none;">
                         <i class="fa fa-eye"></i> View Uploaded Data
                     </a>
                 </div>
@@ -199,6 +205,7 @@ foreach ($metadata as $field => $attributes) {
     <div id="cover-spin"></div>
 
     <script type="text/javascript">
+        console.log(ExternalModules.CSRF_TOKEN)
         var collection = {};
         var collectionTable = $('#collection');
         var collectionDataTable = null;
@@ -207,8 +214,7 @@ foreach ($metadata as $field => $attributes) {
         var report_uuid = null;
         var uploaded_to_clearml=false;
         var parsed = null;
-        const CLASSIFY_BASE_URL = '<?= $classifyURL ?>'; // The base URL for your external API
-        
+
         $(function() {
 
         }); //document ready
@@ -302,18 +308,32 @@ foreach ($metadata as $field => $attributes) {
                 $.ajax({
                     url: '<?= $classifyURL ?>/actions/update_action',
                     method: 'POST',
-                    data: {
-                        'report_uuid': report_uuid,
-                        'action': 'Deleted report'
+                    headers: {
+                        'Content-Type': 'application/json',
                     },
+                    data: JSON.stringify({
+                        redcap_csrf_token: ExternalModules.CSRF_TOKEN,
+                        action: 'update-action',
+                        payload: {
+                            report_uuid: report_uuid,
+                            action: 'Deleted report'
+                        }
+                    }),
                     success: function(res) {
                         if (res.success) {
                             $.ajax({ //Delete report to prevent clearml dataset error
                                 url: '<?= $classifyURL ?>/reports/delete',
                                 type: 'POST',
-                                data: {
-                                    'report_uuid': report_uuid
+                                headers: {
+                                    'Content-Type': 'application/json',
                                 },
+                                data: JSON.stringify({
+                                    redcap_csrf_token: ExternalModules.CSRF_TOKEN,
+                                    action: 'reports-delete',
+                                    payload: {
+                                        'report_uuid': report_uuid
+                                    }
+                                }),
                                 success: function(data) {
                                     if (data.success){
                                     } else {
@@ -341,7 +361,7 @@ foreach ($metadata as $field => $attributes) {
         });
 
         // This needs to be updated to create a file from the selected data in the REDCap Project.
-        $('#submitUploadBtn').click(function(){
+        $('#submitUploadBtn').click(function() {
             console.log('submit clicked')
             var fileName = $(this).val().split('\\').pop();
             $('#uploadReportFileLabel').html(fileName);
@@ -370,8 +390,8 @@ foreach ($metadata as $field => $attributes) {
             // Ensure the filename ends with .csv and then replace the suffix for the user_uuid
             filename = filename.endsWith('.csv') ? filename : filename + '.csv';
 
-            const blob = new Blob([csv], { type: 'text/csv' });
-            let file = new File([blob], filename, { type: 'text/csv' });
+            const blob = new Blob([csv], {type: 'text/csv'});
+            let file = new File([blob], filename, {type: 'text/csv'});
 
             let uploadFile = $('#uploadReportFile');
             if (uploadFile.val() === null || uploadFile.val() === '') {
@@ -383,7 +403,7 @@ foreach ($metadata as $field => $attributes) {
                 file = new File(
                     [file], // File content remains the same
                     file.name.replace(/\s+/g, '_'), // Replace spaces with underscores
-                    { type: file.type } // Preserve the file type
+                    {type: file.type} // Preserve the file type
                 );
             }
             if (!file.name.endsWith('.csv')) {
@@ -400,7 +420,7 @@ foreach ($metadata as $field => $attributes) {
                 showError('Unknown file error encountered');
                 return;
             }
-            let max_filesize = 500*1024*1024; //500 MB
+            let max_filesize = 500 * 1024 * 1024; //500 MB
             if (file.size > max_filesize) {
                 showError('File is too large. Max filesize is 500 MB');
                 return;
@@ -410,43 +430,50 @@ foreach ($metadata as $field => $attributes) {
 
             console.log(csv);
 
-            var form_data = new FormData();
-            form_data.append('file', csv); // from the aaron version
+            //var form_data = new FormData();
+            //form_data.append('file', csv); // from the aaron version
 
-            // Create a Blob from the parsed CSV string
-            //const csvBlob = new Blob([csv], { type: 'text/csv' });
-            //console.log(csvBlob);
-            //form_data.append('file', csvBlob);
+            const formData = new FormData();
+            formData.append('redcap_csrf_token', ExternalModules.CSRF_TOKEN);
+            formData.append('action', 'reports-submit');
+            formData.append('file', file);  // Assuming `csv` is a string
+
+            console.log(file);
+
 
             console.log(<?= json_encode($api_key[0]) ?>);
             console.log('<?= $classifyURL ?>');
+            console.log(ExternalModules.CSRF_TOKEN);
+            //console.log(form_data);
 
-            // get filename from uploaded file
             $.ajax({
-                url: '<?= $proxy ?>',
-                method: 'post',
-                dataType: 'json',
-                data: form_data,
-                processData: false,
-                contentType: false,
-                headers: {
-                    'X-Proxy-Target-Url': '<?= $classifyURL ?>/reports/submit', // The actual external API endpoint
-                },
-                success: function(res) {
+                url: '<?= $module->getUrl("proxy.php") ?>&action=reports_submit',
+                method: 'POST',
+                /*dataType: 'json',
+                data: { // <-- PASS THE OBJECT DIRECTLY, DON'T USE JSON.stringify()
+                    redcap_csrf_token: ExternalModules.CSRF_TOKEN,
+                    payload: JSON.stringify(csv) // Stringify just the 'csv' part if it's a complex object
+                },*/
+                data: formData,
+                processData: false,        // prevent jQuery from processing data
+                contentType: false,        // prevent jQuery from setting Content-Type
+                success: function (res) {
                     if (res.success) {
                         let column_types = res.column_types;
                         report_uuid = res.report_uuid;
+
                         $.ajax({
-                            url: '<?= $proxy ?>',
+                            url: '<?= $module->getUrl("proxy.php") ?>&action=update_action',
                             method: 'POST',
+                            dataType: 'json',
                             data: {
-                                'report_uuid': report_uuid,
-                                'action': 'Uploaded dataset'
+                                redcap_csrf_token: ExternalModules.CSRF_TOKEN,
+                                payload: {
+                                    report_uuid: report_uuid,
+                                    action: 'Uploaded dataset'
+                                },
                             },
-                            headers: {
-                                'X-Proxy-Target-Url': '<?= $classifyURL ?>/actions/update_action'
-                            },
-                            success: function(res) {
+                            success: function (res) {
                                 if (res.success) {
                                     toggleLoadingScreenOverlay();
                                     showSuccess('Dataset uploaded');
@@ -458,7 +485,7 @@ foreach ($metadata as $field => $attributes) {
                                     toggleLoadingScreenOverlay();
                                 }
                             },
-                            error: function(xhr, ajaxOptions, thrownError) {
+                            error: function () {
                                 toggleLoadingScreenOverlay();
                                 showError('Error communicating with the server');
                             }
@@ -469,12 +496,18 @@ foreach ($metadata as $field => $attributes) {
                         toggleLoadingScreenOverlay();
                     }
                 },
-                error: function(xhr, ajaxOptions, thrownError) {
+                error: function (xhr, status, error) {
+                    console.error("❌ AJAX Error", {
+                        status,
+                        error,
+                        responseText: xhr.responseText,
+                    });
+                    showError("AJAX error: " + error);
                     toggleLoadingScreenOverlay();
                     showError('Error communicating with the server');
                 }
             });
-        }); // upload
+        });
 
         function showColumns(data_types, missing_values) {
             console.log(data_types);
@@ -723,12 +756,16 @@ foreach ($metadata as $field => $attributes) {
                         url: '<?= $api_url ?>/change_column_types',
                         type: 'POST',
                         data: JSON.stringify({
-                            'filename': currentFile,
-                            'data_types': JSON.stringify(form)
+                            redcap_csrf_token: ExternalModules.CSRF_TOKEN,
+                            action: 'change-column-types',
+                            payload: {
+                                'filename': currentFile,
+                                'data_types': JSON.stringify(form)
+                            }
                         }),
                         contentType: 'application/json; charset=utf-8',
                         success: function(data) {
-                            if (data.success == false) {
+                            if (data.success === false) {
                                 toggleLoadingScreenOverlay()
                                 showError(data.message);
                                 return null;
@@ -738,10 +775,14 @@ foreach ($metadata as $field => $attributes) {
                                 $.ajax({ //Update table with column changes so they can be applied to test set if necessary
                                     url: '<?= $classifyURL ?>/reports/set-column_changes',
                                     type: 'POST',
-                                    data: {
-                                        'filename': currentFile,
-                                        'column_changes': JSON.stringify(column_types_updated)
-                                    },
+                                    data: JSON.stringify({
+                                        redcap_csrf_token: ExternalModules.CSRF_TOKEN,
+                                        action: 'set-column-changes',
+                                        payload: {
+                                            'filename': currentFile,
+                                            'column_changes': JSON.stringify(column_types_updated)
+                                        }
+                                    }),
                                     success: function(data) {
                                         if (data.success == false) {
                                             toggleLoadingScreenOverlay()

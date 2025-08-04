@@ -6,94 +6,135 @@ use ExternalModules\AbstractExternalModule;
 use ExternalModules\ExternalModules;
 use REDCap;
 
-$GLOBALS['classifyURL'] = 'https://classify.ai.uky.edu';
-$GLOBALS['api_url'] = 'https://classify.ai.uky.edu/api';
-
 class CLASSifyConnect extends AbstractExternalModule {
-
-    public function handleApiProxyRequest()
+    public function proxyApiJsonPost($apiPath)
     {
-        // --------------------------------------------------------------------
-        // IMPORTANT SECURITY NOTE:
-        // Before making the external API call, always validate and sanitize
-        // any input received from the frontend (e.g., query parameters, POST data).
-        // Never blindly pass user-supplied data to the external API.
-        // --------------------------------------------------------------------
+        $apiUrl = rtrim($this->getSystemSetting('api_url') ?: 'https://classify.ai.uky.edu/api', '/') . $apiPath;
+        $body = file_get_contents('php://input');
 
-        $requestMethod = $_SERVER['REQUEST_METHOD'];
+        $ch = curl_init($apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
 
-        // Set content type header for the response
-        header('Content-Type: application/json');
-
-        // --- Configuration for the External API ---
-        $externalUrl = $_SERVER['HTTP_X_PROXY_TARGET_URL']; // Replace with your actual external API endpoint
-        $apiKey = $this->getProjectSetting('api_key'); // If the external API requires an API key
-
-        // --- Initialize cURL session ---
-        $ch = curl_init();
-
-        // Set cURL options
-        curl_setopt($ch, CURLOPT_URL, $externalUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return the response as a string
-        curl_setopt($ch, CURLOPT_HEADER, false);      // Don't include the response header
-        curl_setopt($ch, CURLOPT_TIMEOUT, 60);        // Timeout after 60 seconds
-
-        // Forward all incoming headers from the client to the external API
-        /*$incomingHeaders = getallheaders();
-        $forwardHeaders = [];
-        foreach ($incomingHeaders as $name => $value) {
-            // Exclude headers that cURL manages automatically or that are specific to the proxy call
-            // We want to forward 'Content-Type', 'Authorization', etc.
-            if (!in_array(strtolower($name), ['host', 'content-length', 'expect', 'x-proxy-target-url'])) {
-                $forwardHeaders[] = "$name: $value";
-            }
-        }*/
-
-        // If the external API requires an API key in headers
-        $headers = [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $apiKey, // Example for Bearer Token
-        ];
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-        // If the frontend makes a POST request to this proxy,
-        // you might want to forward the POST data to the external API.
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $postData = file_get_contents('php://input'); // Get raw POST data
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-        }
-
-        // --- Execute cURL request ---
         $response = curl_exec($ch);
-
-        // --- Error Handling ---
-        if (curl_errno($ch)) {
-            $error_msg = curl_error($ch);
-            $this->log('CURL Error: ' . $error_msg, [
-                'api_url' => $externalUrl,
-                'request_method' => $_SERVER['REQUEST_METHOD']
-            ]);
-            http_response_code(500); // Internal Server Error
-            echo json_encode(['error' => 'Failed to connect to external API: ' . $error_msg]);
-        } else {
-            // Get HTTP status code from the API response
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-            // Forward the original HTTP status code from the external API
-            http_response_code($httpCode);
-
-            // Directly echo the response from the external API to the frontend
-            echo $response;
-        }
-
-        // --- Close cURL session ---
+        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        // Important: Exit after handling the request to prevent REDCap from
-        // trying to render a full page or further processing.
-        exit();
+        http_response_code($status);
+        echo $response;
     }
+
+    public function proxyRootJsonPost($apiPath)
+    {
+        $apiUrl = rtrim($this->getSystemSetting('api_url') ?: 'https://classify.ai.uky.edu', '/') . $apiPath;
+        $body = file_get_contents('php://input');
+
+        $ch = curl_init($apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+
+        $response = curl_exec($ch);
+        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        http_response_code($status);
+        echo $response;
+    }
+
+    public function proxyRootFormPost($apiPath)
+    {
+        $apiUrl = rtrim($this->getSystemSetting('api_url') ?: 'https://classify.ai.uky.edu', '/') . $apiPath;
+
+        // Check the uploaded file
+        if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'No file uploaded.']);
+            return;
+        }
+
+        // Read file data
+        $fileTmpPath = $_FILES['file']['tmp_name'];
+        $fileName = $_FILES['file']['name'];
+        $fileContents = file_get_contents($fileTmpPath);
+
+        // User UUID field (adapt as needed)
+        $userUuid = 'example-user-id'; // You can dynamically get this as appropriate
+
+        // Boundary
+        $boundary = uniqid();
+        $delimiter = '-------------' . $boundary;
+
+        // Build multipart body
+        $data = '';
+        $eol = "\r\n";
+
+        // File part
+        $data .= "--" . $delimiter . $eol;
+        $data .= 'Content-Disposition: form-data; name="file"; filename="' . $fileName . '"' . $eol;
+        $data .= 'Content-Type: text/csv' . $eol . $eol;
+        $data .= $fileContents . $eol;
+
+        // User UUID part
+        $data .= "--" . $delimiter . $eol;
+        $data .= 'Content-Disposition: form-data; name="user_uuid"' . $eol . $eol;
+        $data .= $userUuid . $eol;
+
+        // End boundary
+        $data .= "--" . $delimiter . "--" . $eol;
+
+        // Stream context for POST
+        $options = [
+            'http' => [
+                'header'  => "Content-Type: multipart/form-data; boundary=" . $delimiter . "\r\n",
+                'method'  => 'POST',
+                'content' => $data,
+            ],
+        ];
+
+        $context = stream_context_create($options);
+        $result = file_get_contents($apiUrl, false, $context);
+
+        // Get response status code
+        $status = $http_response_header[0] ?? 'HTTP/1.1 500 Internal Server Error';
+        preg_match('/\d{3}/', $status, $matches);
+        $statusCode = $matches[0] ?? 500;
+
+        http_response_code((int)$statusCode);
+        echo $result;
+    }
+
+
+
+    public function proxyFileUpload($apiPath)
+    {
+        $apiUrl = rtrim($this->getSystemSetting('api_url'), '/') . $apiPath;
+
+        $postFields = [
+            'user_uuid' => $_POST['user_uuid'] ?? '',
+        ];
+
+        if (isset($_FILES['file'])) {
+            $postFields['file'] = new \CURLFile($_FILES['file']['tmp_name'], $_FILES['file']['type'], $_FILES['file']['name']);
+        }
+
+        $ch = curl_init($apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+        curl_setopt($ch, CURLOPT_POST, true);
+
+        $response = curl_exec($ch);
+        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        http_response_code($status);
+        echo $response;
+    }
+
+
 
     // provided courtesy of Scott J. Pearson
     private static function isExternalModulePage() {
@@ -124,15 +165,18 @@ class CLASSifyConnect extends AbstractExternalModule {
     }
 
     private static function isCLASSifyPage() {
-    $page = isset($_SERVER['PHP_SELF']) ? $_SERVER['PHP_SELF'] : "";
-    if (preg_match("/ExternalModules\/\?prefix=CLASSify-Connect&page=pages%2FCLASSifyConnectPage/", $_SERVER['REQUEST_URI'])) {
-        return TRUE;
+        $page = isset($_SERVER['PHP_SELF']) ? $_SERVER['PHP_SELF'] : "";
+        if (preg_match("/ExternalModules\/\?prefix=CLASSify-Connect&page=pages%2FCLASSifyConnectPage/", $_SERVER['REQUEST_URI'])) {
+            return TRUE;
+        }
+        return FALSE;
     }
-    return FALSE;
-}
-
 
     function redcap_every_page_top($project_id) {
+        $GLOBALS["classifyURL"] = $this->getUrl('proxy.php', true);
+        //$GLOBALS['classifyURL'] = 'https://redcap.ai.uky.edu/api/?type=module&prefix=CLASSify-Connect&content=externalModule&action=reports-submit';
+        $GLOBALS["api_url"] = $this->getUrl('api_proxy.php', true);
+
         if (self::isExternalModulePage() | self::isCLASSifyPage()) {
             $project_id = $_GET['pid']; // or however you're getting the project ID
             $instruments = REDCap::getInstrumentNames(); // Get instrument names
@@ -180,6 +224,7 @@ class CLASSifyConnect extends AbstractExternalModule {
                 const moduleData= <?= json_encode($data) ?>;
                 const moduleCSV = <?= json_encode($data) ?>;
                 const moduleByIns = <?= json_encode($data_by_instrument) ?>;
+                console.log(moduleByIns)
                 const selectedForms = <?= json_encode($form) ?>;
                 const classifier = <?= json_encode($classifier) ?>;
                 const email = <?= json_encode($email) ?>;
