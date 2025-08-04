@@ -306,34 +306,28 @@ foreach ($metadata as $field => $attributes) {
             $("#select-class").selectpicker('refresh');
             if (!uploaded_to_clearml) {
                 $.ajax({
-                    url: '<?= $classifyURL ?>/actions/update_action',
+                    url: '<?= $module->getUrl("proxy.php") ?>&action=update_action',
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    data: JSON.stringify({
+                    data: {
                         redcap_csrf_token: ExternalModules.CSRF_TOKEN,
-                        action: 'update-action',
-                        payload: {
-                            report_uuid: report_uuid,
-                            action: 'Deleted report'
-                        }
-                    }),
+                        report_uuid: report_uuid,
+                        action: 'Deleted report'
+                    },
                     success: function(res) {
                         if (res.success) {
                             $.ajax({ //Delete report to prevent clearml dataset error
-                                url: '<?= $classifyURL ?>/reports/delete',
+                                url: '<?= $module->getUrl("proxy.php") ?>&action=reports_delete',
                                 type: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
                                 },
-                                data: JSON.stringify({
+                                data: {
                                     redcap_csrf_token: ExternalModules.CSRF_TOKEN,
-                                    action: 'reports-delete',
-                                    payload: {
-                                        'report_uuid': report_uuid
-                                    }
-                                }),
+                                    'report_uuid': report_uuid
+                                },
                                 success: function(data) {
                                     if (data.success){
                                     } else {
@@ -468,10 +462,8 @@ foreach ($metadata as $field => $attributes) {
                             dataType: 'json',
                             data: {
                                 redcap_csrf_token: ExternalModules.CSRF_TOKEN,
-                                payload: {
-                                    report_uuid: report_uuid,
-                                    action: 'Uploaded dataset'
-                                },
+                                report_uuid: report_uuid,
+                                action: 'Uploaded dataset'
                             },
                             success: function (res) {
                                 if (res.success) {
@@ -753,16 +745,13 @@ foreach ($metadata as $field => $attributes) {
                 }
                 else if (currentFile !== null) {
                     $.ajax({
-                        url: '<?= $api_url ?>/change_column_types',
+                        url: '<?= $module->getUrl("proxy.php") ?>&action=change_column_types',
                         type: 'POST',
-                        data: JSON.stringify({
+                        data: {
                             redcap_csrf_token: ExternalModules.CSRF_TOKEN,
-                            action: 'change-column-types',
-                            payload: {
-                                'filename': currentFile,
-                                'data_types': JSON.stringify(form)
-                            }
-                        }),
+                            'filename': currentFile,
+                            'data_types': JSON.stringify(form)
+                        },
                         contentType: 'application/json; charset=utf-8',
                         success: function(data) {
                             if (data.success === false) {
@@ -773,16 +762,13 @@ foreach ($metadata as $field => $attributes) {
                             else {
                                 let column_types_updated = data.data_types;
                                 $.ajax({ //Update table with column changes so they can be applied to test set if necessary
-                                    url: '<?= $classifyURL ?>/reports/set-column_changes',
+                                    url: '<?= $module->getUrl("proxy.php") ?>&action=set-column_changes',
                                     type: 'POST',
-                                    data: JSON.stringify({
+                                    data: {
                                         redcap_csrf_token: ExternalModules.CSRF_TOKEN,
-                                        action: 'set-column-changes',
-                                        payload: {
-                                            'filename': currentFile,
-                                            'column_changes': JSON.stringify(column_types_updated)
-                                        }
-                                    }),
+                                        'filename': currentFile,
+                                        'column_changes': JSON.stringify(column_types_updated)
+                                    },
                                     success: function(data) {
                                         if (data.success == false) {
                                             toggleLoadingScreenOverlay()

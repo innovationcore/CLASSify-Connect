@@ -4,137 +4,145 @@ namespace CAAIModules\CLASSifyConnect;
 
 use ExternalModules\AbstractExternalModule;
 use ExternalModules\ExternalModules;
+
+// Include these guzzle pieces to make more concise and orderly curls
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\MessageFormatter;
+use GuzzleHttp\Middleware;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
+
 use REDCap;
 
+
+
 class CLASSifyConnect extends AbstractExternalModule {
+
     public function proxyApiJsonPost($apiPath)
     {
-        $apiUrl = rtrim($this->getSystemSetting('api_url') ?: 'https://classify.ai.uky.edu/api', '/') . $apiPath;
-        $body = file_get_contents('php://input');
+        // Set up Monolog logger
+        $logFile = __DIR__ . '/logs/guzzle.log';  // __DIR__ is the current module folder
+        $logger = new Logger('guzzle');
+        $logger->pushHandler(new StreamHandler($logFile, Logger::DEBUG));
 
-        $ch = curl_init($apiUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
 
-        $response = curl_exec($ch);
-        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        // Create Guzzle handler stack with logging
+        $stack = HandlerStack::create();
+        $stack->push(
+            Middleware::log(
+                $logger,
+                new MessageFormatter(MessageFormatter::DEBUG) // You can customize the format
+            )
+        );
 
-        http_response_code($status);
-        echo $response;
-    }
+        $guzzleClient = new Client(['handler' => $stack]);
+        $apiUrl = rtrim($this->getSystemSetting('api_url') ?: 'https://classify.ai.uky.edu/', '/') . $apiPath;
 
-    public function proxyRootJsonPost($apiPath)
-    {
-        $apiUrl = rtrim($this->getSystemSetting('api_url') ?: 'https://classify.ai.uky.edu', '/') . $apiPath;
-        $body = file_get_contents('php://input');
+        $apiKey = $this->getProjectSetting('api_key')[0];
 
-        $ch = curl_init($apiUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+        // Read incoming request body
+        $rawInput = file_get_contents('php://input');
 
-        $response = curl_exec($ch);
-        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        // Optional: decode/validate and re-encode to ensure valid JSON
+        $jsonData = json_decode($rawInput, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Invalid JSON in request body',
+            ]);
+            return;
+        }
 
-        http_response_code($status);
-        echo $response;
+        try {
+            $response = $guzzleClient->post($apiUrl, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Accept' => 'application/json',
+                    'Content-Type'  => 'application/json',
+                ],
+                'json' => $jsonData,  // Automatically encodes the array as JSON
+            ]);
+            http_response_code($response->getStatusCode());
+            echo $response->getBody();
+        } catch (RequestException $e) {
+            $response = $e->getResponse();
+            $statusCode = $response ? $response->getStatusCode() : 500;
+            $body = $response ? (string) $response->getBody() : $e->getMessage();
+
+            http_response_code($statusCode);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Request failed',
+                'error' => $body,
+            ]);
+        }
     }
 
     public function proxyRootFormPost($apiPath)
     {
+        // Set up Monolog logger
+        $logFile = __DIR__ . '/logs/guzzle.log';  // __DIR__ is the current module folder
+        $logger = new Logger('guzzle');
+        $logger->pushHandler(new StreamHandler($logFile, Logger::DEBUG));
+
+
+        // Create Guzzle handler stack with logging
+        $stack = HandlerStack::create();
+        $stack->push(
+            Middleware::log(
+                $logger,
+                new MessageFormatter(MessageFormatter::DEBUG) // You can customize the format
+            )
+        );
+
+
+        $guzzleClient = new Client(['handler' => $stack]);
         $apiUrl = rtrim($this->getSystemSetting('api_url') ?: 'https://classify.ai.uky.edu', '/') . $apiPath;
 
-        // Check the uploaded file
+        // Check uploaded file
         if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'No file uploaded.']);
             return;
         }
 
-        // Read file data
         $fileTmpPath = $_FILES['file']['tmp_name'];
         $fileName = $_FILES['file']['name'];
-        $fileContents = file_get_contents($fileTmpPath);
+        $apiKey = $this->getProjectSetting('api_key')[0];
 
-        // User UUID field (adapt as needed)
-        $userUuid = 'example-user-id'; // You can dynamically get this as appropriate
+        try {
+            $response = $guzzleClient->post($apiUrl, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiKey,
+                ],
+                'multipart' => [
+                    [
+                        'name'     => 'file',
+                        'contents' => fopen($fileTmpPath, 'r'),
+                        'filename' => $fileName,
+                    ],
+                ]
+            ]);
 
-        // Boundary
-        $boundary = uniqid();
-        $delimiter = '-------------' . $boundary;
+            http_response_code($response->getStatusCode());
+            echo $response->getBody();
+        } catch (RequestException $e) {
+            $response = $e->getResponse();
+            $statusCode = $response ? $response->getStatusCode() : 500;
+            $body = $response ? (string) $response->getBody() : $e->getMessage();
 
-        // Build multipart body
-        $data = '';
-        $eol = "\r\n";
-
-        // File part
-        $data .= "--" . $delimiter . $eol;
-        $data .= 'Content-Disposition: form-data; name="file"; filename="' . $fileName . '"' . $eol;
-        $data .= 'Content-Type: text/csv' . $eol . $eol;
-        $data .= $fileContents . $eol;
-
-        // User UUID part
-        $data .= "--" . $delimiter . $eol;
-        $data .= 'Content-Disposition: form-data; name="user_uuid"' . $eol . $eol;
-        $data .= $userUuid . $eol;
-
-        // End boundary
-        $data .= "--" . $delimiter . "--" . $eol;
-
-        // Stream context for POST
-        $options = [
-            'http' => [
-                'header'  => "Content-Type: multipart/form-data; boundary=" . $delimiter . "\r\n",
-                'method'  => 'POST',
-                'content' => $data,
-            ],
-        ];
-
-        $context = stream_context_create($options);
-        $result = file_get_contents($apiUrl, false, $context);
-
-        // Get response status code
-        $status = $http_response_header[0] ?? 'HTTP/1.1 500 Internal Server Error';
-        preg_match('/\d{3}/', $status, $matches);
-        $statusCode = $matches[0] ?? 500;
-
-        http_response_code((int)$statusCode);
-        echo $result;
-    }
-
-
-
-    public function proxyFileUpload($apiPath)
-    {
-        $apiUrl = rtrim($this->getSystemSetting('api_url'), '/') . $apiPath;
-
-        $postFields = [
-            'user_uuid' => $_POST['user_uuid'] ?? '',
-        ];
-
-        if (isset($_FILES['file'])) {
-            $postFields['file'] = new \CURLFile($_FILES['file']['tmp_name'], $_FILES['file']['type'], $_FILES['file']['name']);
+            http_response_code($statusCode);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Request failed',
+                'error' => $body,
+            ]);
         }
-
-        $ch = curl_init($apiUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-        curl_setopt($ch, CURLOPT_POST, true);
-
-        $response = curl_exec($ch);
-        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        http_response_code($status);
-        echo $response;
     }
-
-
 
     // provided courtesy of Scott J. Pearson
     private static function isExternalModulePage() {

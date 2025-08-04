@@ -25,18 +25,6 @@
                     "type": "descriptive"
                 },
                 {
-                    "key": "classify-email",
-                    "name": "CLASSify Email",
-                    "required": true,
-                    "type": "text",
-                    "repeatable": false
-                },
-                {
-                    "key": "check-account-status",
-                    "name": "<button id='account-status' onclick='checkEmail()'>Check CLASSify Account Status</button><p id='response'></p>",
-                    "type": "descriptive"
-                },
-                {
                     "key": "collaboration-request",
                     "name": "If you would like to use the CLASSify Connect plugin but do not have CLASSify access, you may fill out the <a href='https://redcap.uky.edu/redcap/surveys/?s=K7WTCDH37AXLEKNM' target='_blank'>Center for Applied AI Collaboration Request</a> form for review by our team. ",
                     "type": "descriptive"
