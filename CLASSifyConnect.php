@@ -21,59 +21,60 @@ use REDCap;
 
 class CLASSifyConnect extends AbstractExternalModule {
 
-    public function proxyApiJsonPost($apiPath)
+    public function proxyJsonPost($apiPath)
     {
         // Set up Monolog logger
-        $logFile = __DIR__ . '/logs/guzzle.log';  // __DIR__ is the current module folder
+        $logFile = __DIR__ . '/logs/guzzle.log';
         $logger = new Logger('guzzle');
         $logger->pushHandler(new StreamHandler($logFile, Logger::DEBUG));
 
-
-        // Create Guzzle handler stack with logging
+        // Guzzle logging
         $stack = HandlerStack::create();
-        $stack->push(
-            Middleware::log(
-                $logger,
-                new MessageFormatter(MessageFormatter::DEBUG) // You can customize the format
-            )
-        );
+        $stack->push(Middleware::log($logger, new MessageFormatter(MessageFormatter::DEBUG)));
 
         $guzzleClient = new Client(['handler' => $stack]);
-        $apiUrl = rtrim($this->getSystemSetting('api_url') ?: 'https://classify.ai.uky.edu/', '/') . $apiPath;
 
+        $apiUrl = rtrim($this->getSystemSetting('api_url') ?: 'https://classify.ai.uky.edu/', '/') . $apiPath;
         $apiKey = $this->getProjectSetting('api_key')[0];
 
-        // Read incoming request body
         $rawInput = file_get_contents('php://input');
 
-        // Optional: decode/validate and re-encode to ensure valid JSON
-        $jsonData = json_decode($rawInput, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Invalid JSON in request body',
-            ]);
-            return;
-        }
+        // Parse URL-encoded POST body into array
+        parse_str($rawInput, $postData);
+
+        // REDCap CSRF token will be in $_POST
+         $_POST = $postData;
+
+        // Remove the CSRF token
+        unset($postData['redcap_csrf_token']);
 
         try {
             $response = $guzzleClient->post($apiUrl, [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $apiKey,
-                    'Accept' => 'application/json',
-                    'Content-Type'  => 'application/json',
+                    //'Accept' => 'application/json',
+                    //'Content-Type' => 'application/json',
+                    'Content-Type' => 'application/x-www-form-urlencoded',
                 ],
-                'json' => $jsonData,  // Automatically encodes the array as JSON
+                'form_params' => $postData,
+                //'body' => http_build_query($postData, '', '&', PHP_QUERY_RFC3986),
             ]);
+
+            //http_response_code($response->getStatusCode());
             http_response_code($response->getStatusCode());
-            echo $response->getBody();
+            header('Content-Type: application/json'); // ✅ required
+            echo json_encode([
+                'success' => true,
+                'message' => 'Action recorded successfully'
+            ]);
+            //echo $response->getBody();
         } catch (RequestException $e) {
             $response = $e->getResponse();
             $statusCode = $response ? $response->getStatusCode() : 500;
             $body = $response ? (string) $response->getBody() : $e->getMessage();
 
             http_response_code($statusCode);
+            header('Content-Type: application/json'); // ✅ required
             echo json_encode([
                 'success' => false,
                 'message' => 'Request failed',
@@ -82,7 +83,8 @@ class CLASSifyConnect extends AbstractExternalModule {
         }
     }
 
-    public function proxyRootFormPost($apiPath)
+
+    public function proxyFormPost($apiPath)
     {
         // Set up Monolog logger
         $logFile = __DIR__ . '/logs/guzzle.log';  // __DIR__ is the current module folder
@@ -98,7 +100,6 @@ class CLASSifyConnect extends AbstractExternalModule {
                 new MessageFormatter(MessageFormatter::DEBUG) // You can customize the format
             )
         );
-
 
         $guzzleClient = new Client(['handler' => $stack]);
         $apiUrl = rtrim($this->getSystemSetting('api_url') ?: 'https://classify.ai.uky.edu', '/') . $apiPath;

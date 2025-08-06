@@ -21,41 +21,47 @@ $action = $_GET['action'] ?? '';
 try {
     switch ($action) {
         case 'reports_submit':
-            $response = $module->proxyRootFormPost('/reports/submit');
+            $response = $module->proxyFormPost('/reports/submit');
             echo $response;
             break;
 
         case 'reports_delete':
-            $response = $module->proxyRootFormPost('/reports/delete');
+            $response = $module->proxyJsonPost('/reports/delete');
             echo $response;
             break;
 
         case 'update_action':
-            $response = $module->proxyRootJsonPost('/actions/update_action');
+            $response = $module->proxyJsonPost('/actions/update_action');
             echo $response;
             break;
 
         case 'verify_dataset':
-            // File upload
-            //$response = $module->proxyUpload('/verify_dataset');
-            $response = $module->proxyRootJsonUpload('/verify_dataset');
+            // File Post
+            //$response = $module->proxyPost('/verify_dataset');
+            $response = $module->proxyJsonPost('/verify_dataset');
             echo $response;
             break;
 
         case 'get_column_types':
-            //$response = $module->proxyFileUpload('/get_column_types');
-            $response = $module->proxyApiJsonUpload('/get_column_types');
+            //$response = $module->proxyFilePost('/get_column_types');
+            $response = $module->proxyJsonPost('/get_column_types');
             echo $response;
             break;
 
         case 'change_column_types':
-            //$response = $module->proxyFileUpload('/get_column_types');
-            $response = $module->proxyApiJsonUpload('/api/change_column_types');
+            //$response = $module->proxyFilePost('/get_column_types');
+            $response = $module->proxyJsonPost('/api/change_column_types');
+            echo $response;
+            break;
+
+        case 'set_column_changes':
+            //$response = $module->proxyFilePost('/get_column_types');
+            $response = $module->proxyJsonPost('/reports/set-column_changes');
             echo $response;
             break;
 
         case 'delete_dataset':
-            $response = $module->proxyRootJsonPost('/delete_dataset');
+            $response = $module->proxyJsonPost('/delete_dataset');
             echo $response;
             break;
 

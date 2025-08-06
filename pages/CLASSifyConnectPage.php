@@ -432,22 +432,17 @@ foreach ($metadata as $field => $attributes) {
             formData.append('action', 'reports-submit');
             formData.append('file', file);  // Assuming `csv` is a string
 
-            console.log(file);
+            //console.log(file);
 
 
-            console.log(<?= json_encode($api_key[0]) ?>);
-            console.log('<?= $classifyURL ?>');
-            console.log(ExternalModules.CSRF_TOKEN);
+            //console.log(<?= json_encode($api_key[0]) ?>);
+            //console.log('<?= $classifyURL ?>');
+            //console.log(ExternalModules.CSRF_TOKEN);
             //console.log(form_data);
 
             $.ajax({
                 url: '<?= $module->getUrl("proxy.php") ?>&action=reports_submit',
                 method: 'POST',
-                /*dataType: 'json',
-                data: { // <-- PASS THE OBJECT DIRECTLY, DON'T USE JSON.stringify()
-                    redcap_csrf_token: ExternalModules.CSRF_TOKEN,
-                    payload: JSON.stringify(csv) // Stringify just the 'csv' part if it's a complex object
-                },*/
                 data: formData,
                 processData: false,        // prevent jQuery from processing data
                 contentType: false,        // prevent jQuery from setting Content-Type
@@ -459,25 +454,28 @@ foreach ($metadata as $field => $attributes) {
                         $.ajax({
                             url: '<?= $module->getUrl("proxy.php") ?>&action=update_action',
                             method: 'POST',
-                            dataType: 'json',
                             data: {
                                 redcap_csrf_token: ExternalModules.CSRF_TOKEN,
                                 report_uuid: report_uuid,
                                 action: 'Uploaded dataset'
                             },
                             success: function (res) {
+                                console.log(res)
                                 if (res.success) {
+                                    console.log('res success!')
                                     toggleLoadingScreenOverlay();
                                     showSuccess('Dataset uploaded');
                                     $('#uploadModal').modal('hide');
                                     $('#columnsModal').modal('show');
                                     showColumns(column_types['data_types'], column_types['missing_values']);
                                 } else {
+                                    console.log(res);
                                     showError(res.message);
                                     toggleLoadingScreenOverlay();
                                 }
                             },
                             error: function () {
+                                console.log(res)
                                 toggleLoadingScreenOverlay();
                                 showError('Error communicating with the server');
                             }
@@ -489,12 +487,6 @@ foreach ($metadata as $field => $attributes) {
                     }
                 },
                 error: function (xhr, status, error) {
-                    console.error("❌ AJAX Error", {
-                        status,
-                        error,
-                        responseText: xhr.responseText,
-                    });
-                    showError("AJAX error: " + error);
                     toggleLoadingScreenOverlay();
                     showError('Error communicating with the server');
                 }
@@ -654,7 +646,7 @@ foreach ($metadata as $field => $attributes) {
             window.location
         });
 
-        $('#submit-to-automl').click(function() {
+        /*$('#submit-to-automl').click(function() {
             if(confirm("Are you sure you want to submit this data for processing?")){
                 toggleLoadingScreenOverlay()
                 let error = 0;
@@ -790,6 +782,133 @@ foreach ($metadata as $field => $attributes) {
                                         return null;
                                     }
                                 });
+                            }
+
+                        },
+                        error: function (xhr, status, error) {
+                            toggleLoadingScreenOverlay()
+                            showError("Error communicating with the server.");
+                            return null;
+                        }
+                    });
+
+                } else {
+                    toggleLoadingScreenOverlay()
+                    showError("Please upload a file first.");
+                }
+            }
+        });*/
+
+        $('#submit-to-automl').click(function() {
+            if(confirm("Are you sure you want to submit this data for processing?")){
+                toggleLoadingScreenOverlay()
+                let error = 0;
+                //let form = $('#column_names').serializeArray();
+                let form = [];
+                let class_column = $('#select-class').val();
+                if (class_column == null || class_column === 'no-class-column-selected') {
+                    if(!confirm("You have not selected a class column, which will limit your potential models to only unsupervised clustering. Continue?")){
+                        $('#select-class').closest('.bootstrap-select').addClass('highlighted'); //Highlight the selectpicker to emphasize to user
+                        error = 1;
+                    }
+                }
+                $('.form-check-input').each(function(index, element) {
+                    if ($(element).attr('type') === 'checkbox') {
+                        if (element.id === class_column) {
+                            if (!$(element).is(':checked')) {
+                                showError('Your chosen class column, "'+element.id+'", must be selected in the column list.');
+                                error = 1;
+                                return;
+                            }
+                        }
+                        let checked_type = document.querySelector('input[name="'+element.id+'"]:checked').id;
+                        let type = checked_type.substring(checked_type.lastIndexOf('-')+1);
+                        if ((element.id === class_column ) && (type === 'float' || type === 'categorical')) {
+                            showError('Your chosen class column, "'+element.id+'", must be of type bool or integer.');
+                            error = 1;
+                            return;
+                        }
+                        if (document.getElementById(element.id+'-missing-values')) { //If there's missing values to deal with
+                            let fill_method = document.getElementById(element.id+'-missing-values').value;
+                            let fill_value = null;
+                            if (fill_method === 'constant') {
+                                fill_value = document.getElementById(element.id+'-fill-value').value;
+                                if (type === 'integer') {
+                                    if (Number.isInteger(Number(fill_value))) {
+                                        fill_value = Number(fill_value);
+                                    } else {
+                                        showError('Fill value for column '+element.id+' not valid for type integer.');
+                                        error = 1;
+                                        return;
+                                    }
+                                }
+                                else if (type === 'float') {
+                                    if (!isNaN(Number(fill_value)) && (Number.isFinite(Number(fill_value)))) {
+                                        fill_value = Number(fill_value);
+                                    } else {
+                                        showError('Fill value for column '+element.id+' not valid for type float.');
+                                        error = 1;
+                                        return;
+                                    }
+                                }
+                                else if (type === 'bool') {
+                                    if (fill_value === 'true' || fill_value === '1' || fill_value === 'True' || fill_value === 'TRUE') {
+                                        fill_value = 1;
+                                    } else if (fill_value === 'false' || fill_value === '0' || fill_value === 'False' || fill_value === 'FALSE'){
+                                        fill_value = 0;
+                                    } else {
+                                        showError('Fill value for column '+element.id+' not valid for type bool.');
+                                        error = 1;
+                                        return;
+                                    }
+                                } //Don't need to check categorical type, because any entry would be valid for string
+                            }
+                            if (element.id === class_column) {
+                                form.push({column:element.id, data_type:type, checked:$(element).is(':checked'), missing:fill_method, fill_value:fill_value, class:true})
+                            }
+                            else {
+                                form.push({column:element.id, data_type:type, checked:$(element).is(':checked'), missing:fill_method, fill_value:fill_value})
+                            }
+                        }
+                        else {
+                            if (element.id === class_column) {
+                                form.push({column:element.id, data_type:type, checked:$(element).is(':checked'), missing:null, fill_value:null, class:true})
+                            }
+                            else {
+                                form.push({column:element.id, data_type:type, checked:$(element).is(':checked'), missing:null, fill_value:null})
+                            }
+                        }
+                        // } else {
+                        //     form.push({column:element.id, data_type:'none', checked:false}) //If dropped column, update actions
+                        // }
+
+                    }
+                });
+                if (error === 1) {
+                    toggleLoadingScreenOverlay()
+                    return null;
+                }
+                else if (report_uuid !== null) {
+                    $.ajax({ //Update table with column changes so they can be applied to test set if necessary
+                        url: '<?= $module->getUrl("proxy.php") ?>&action=set_column_changes',
+                        type: 'POST',
+                        data: {
+                            redcap_csrf_token: ExternalModules.CSRF_TOKEN,
+                            'report_uuid': report_uuid,
+                            'column_changes': JSON.stringify(form)
+                        },
+                        success: function(data) {
+                            if (data.success == false) {
+                                toggleLoadingScreenOverlay()
+                                showError(data.message);
+                                return null;
+                            }
+                            else {
+                                showSuccess(data.message);
+                                $('#gotoMLOpts').show();
+                                $('#submit-to-automl').hide();
+                                uploaded_to_clearml=true;
+                                toggleLoadingScreenOverlay()
                             }
 
                         },
