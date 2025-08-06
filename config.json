@@ -25,40 +25,16 @@
                     "type": "descriptive"
                 },
                 {
-                    "key": "classify-email",
-                    "name": "CLASSify Email",
-                    "required": true,
-                    "type": "text",
-                    "repeatable": false
-                },
-                {
-                    "key": "check-account-status",
-                    "name": "<button id='account-status' onclick='checkEmail()'>Check CLASSify Account Status</button><p id='response'></p>",
-                    "type": "descriptive"
-                },
-                {
                     "key": "collaboration-request",
                     "name": "If you would like to use the CLASSify Connect plugin but do not have CLASSify access, you may fill out the <a href='https://redcap.uky.edu/redcap/surveys/?s=K7WTCDH37AXLEKNM' target='_blank'>Center for Applied AI Collaboration Request</a> form for review by our team. ",
                     "type": "descriptive"
                 },
                 {
-                    "key": "class-field",
-                    "name": "Select a field to use as a classifier.",
+                    "key": "api_key",
+                    "name": "CLASSify API Key",
                     "required": true,
-                    "type": "field-list",
-                    "repeatable": false
-                },
-                {
-                    "key": "filename",
-                    "name": "Name the csv which is uploaded to CLASSify. Project title will be used if this field is left blank. (filename should look like filename.csv)",
-                    "required": false,
                     "type": "text",
                     "repeatable": false
-                },
-                {
-                    "key": "upload-dataset",
-                    "name": "<button id='upload-button' onclick='handleUpload()'>Upload Form Data to CLASSify</button><div id='columnsModal' class='modal fade' tabindex='-1' role='dialog' aria-labelledby='columnsModalLabel' aria-hidden='true'></div><div id='upload-result'></div>",
-                    "type": "descriptive"
                 }
             ]
         }
@@ -66,14 +42,41 @@
     "links": {
         "project": [
             {
-                "name": "CLASSify Connection",
+                "name": "CLASSifyConnect",
                 "icon": "fas fa-message",
-                "url": "CLASSifyConnectPage.php",
+                "url": "pages/CLASSifyConnectPage.php",
                 "show-header-and-footer": true
             }
         ]
     },
+    "api-actions": {
+        "reports-submit": {
+            "description": "submit a report to the CLASSify API",
+            "access": ["auth"]
+        },
+        "update-action": {
+            "description": "submit updated info to CLASSify API",
+            "access": ["auth"]
+        },
+        "reports-delete": {
+            "description": "delete an uploaded report",
+            "access": ["auth"]
+        },
+        "result": {
+            "description": "get a result from CLASSify API",
+            "access": ["auth"]
+        },
+        "set-column-changes": {
+            "description": "submit updated columns from the default created when report submitted",
+            "access": ["auth"]
+        },
+        "change-column-types": {
+            "description": "change the typings of the columns based on the changes made in the gui",
+            "access": ["auth"]
+        }
+    },
     "no-auth-pages": [
-        "classify-connection"
+        "classify-connection",
+        "proxy"
     ]
 }
