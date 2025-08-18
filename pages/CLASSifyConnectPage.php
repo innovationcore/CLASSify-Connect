@@ -313,9 +313,6 @@ foreach ($metadata as $field => $attributes) {
                 $.ajax({
                     url: '<?= $module->getUrl("proxy.php") ?>&action=update_action',
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
                     data: {
                         redcap_csrf_token: ExternalModules.CSRF_TOKEN,
                         report_uuid: report_uuid,
@@ -327,9 +324,6 @@ foreach ($metadata as $field => $attributes) {
                             $.ajax({ //Delete report to prevent clearml dataset error
                                 url: '<?= $module->getUrl("proxy.php") ?>&action=reports_delete',
                                 type: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
                                 data: {
                                     redcap_csrf_token: ExternalModules.CSRF_TOKEN,
                                     'report_uuid': report_uuid
