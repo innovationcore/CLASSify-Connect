@@ -61,7 +61,10 @@ foreach ($metadata as $field => $attributes) {
     </style>
 
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
-        <h1 class="h4">Data - <span class="text-muted">Upload</span></h1>
+        <h1 class="h4 text-muted">Data in the below table is read-only.
+            Please visit <a href="https://classify.ai.uky.edu" target="_blank">classify.ai.uky.edu</a>
+            to make changes.
+        </h1>
     </div>
 
     <div class="row selection-btns">
@@ -69,32 +72,39 @@ foreach ($metadata as $field => $attributes) {
             <a id="add-data-btn" data-bs-toggle="modal" data-bs-target="#uploadModal">
                 <div class="center-home-sects">
                     <span><i class="fa fa-plus"></i></span><br>
-                    <h5>Add Data File</h5>
+                    <h5>Upload REDCap Form(s)</h5>
                 </div>
             </a>
         </div>
         <div class="col-md-6">
             <a id="view-all-btn" href="https://classify.ai.uky.edu/result" class="center-home-sects">
                 <div class="center-home-sects">
-                    <span><i class="fas fa-bars"></i></span><br>
-                    <h5>View All Data</h5>
+                    <span><i class="fas fa-paper-plane"></i></span><br>
+                    <h5>Go to CLASSify</h5>
                 </div>
             </a>
         </div>
     </div>
 
-    <div class="row">
+    <div class="row" style="margin-top: 5px;">
         <div class="col">
-
-            <h2 id="preview-text" style="display:none;">Preview</h2>
             <table id="collection" class="table table-bordered dt-responsive responsive-text" style="width:100%">
                 <thead>
-                <tr></tr>
+                <tr>
+                    <th style="text-align: center;">Filename</th>
+                    <th style="text-align: center;">Notes</th>
+                    <th style="text-align: center;">Date Added</th>
+                    <th style="text-align: center;">Status</th></tr>
                 </thead>
                 <tbody>
                 </tbody>
                 <tfoot>
-                <tr></tr>
+                <tr>
+                    <th style="text-align: center;">Filename</th>
+                    <th style="text-align: center;">Notes</th>
+                    <th style="text-align: center;">Date Added</th>
+                    <th style="text-align: center;">Status</th>
+                </tr>
                 </tfoot>
             </table>
         </div>
@@ -209,7 +219,7 @@ foreach ($metadata as $field => $attributes) {
         var collection = {};
         var collectionTable = $('#collection');
         var collectionDataTable = null;
-        var user_uuid = null;
+        var user_uuid = <?= json_encode($api_key)?>[0];;
         var currentFile = null;
         var report_uuid = null;
         var uploaded_to_clearml=false;
@@ -424,23 +434,10 @@ foreach ($metadata as $field => $attributes) {
 
             toggleLoadingScreenOverlay();
 
-            console.log(csv);
-
-            //var form_data = new FormData();
-            //form_data.append('file', csv); // from the aaron version
-
             const formData = new FormData();
             formData.append('redcap_csrf_token', ExternalModules.CSRF_TOKEN);
             formData.append('action', 'reports-submit');
             formData.append('file', file);  // Assuming `csv` is a string
-
-            //console.log(file);
-
-
-            //console.log(<?= json_encode($api_key[0]) ?>);
-            //console.log('<?= $classifyURL ?>');
-            //console.log(ExternalModules.CSRF_TOKEN);
-            //console.log(form_data);
 
             $.ajax({
                 url: '<?= $module->getUrl("proxy.php") ?>&action=reports_submit',
@@ -809,4 +806,71 @@ foreach ($metadata as $field => $attributes) {
             }
 
         }
+
+        console.log('user_uuid: ' + user_uuid)
+
+        $(function() {
+            console.log('inside that function block')
+            $('.custom-file-input').on('change', function() {
+                var fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').addClass("selected").html(fileName);
+            });
+
+            collectionDataTable = collectionTable.DataTable({
+            serverSide: true,
+            processing: true,
+            ajax: {
+                url: '<?= $module->getUrl("proxy.php") ?>&action=reports_list'
+            },
+            order: [[ 2, "desc" ]],
+            responsive: true,
+            buttons: ['pageLength'],
+            columnDefs: [
+                {
+                    className: "dt-center",
+                    targets: [0, 1, 2, 3]
+                },
+                {
+                    orderable: true,
+                    targets: [0, 1, 2]
+                }
+            ],
+            language: {
+                emptyTable: "No data have been added"
+            },
+            pagingType: "full_numbers",
+            columns: [
+                {
+                    data: 'filename',
+                    render: function(data, type, row) {
+                        return `<span style="display: inline-block; max-width: 20rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${data}">
+                        ${data}
+                    </span>`;
+                    }
+                },
+                {
+                    data: 'comments',
+                    render: function(data, type, row) {
+                        return `
+                            <div class="input-group">
+                                <div class="form-control note-input" style="min-width: 20rem; min-height: 5.25rem; overflow-y: auto; text-align: left;">${data || ''}</div>                            \
+                            </div>`;
+                    }
+                },
+                {
+                    data: 'dateAdded',
+                },
+                {
+                    data: 'status',
+                    title: 'Status',
+                    width: '10rem',
+                    render: function (data) {
+                        return `<span>${data}</span>`;
+                    }
+                },
+            ]
+        });
+
+
+        });
     </script>

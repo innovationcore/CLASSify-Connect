@@ -21,8 +21,7 @@ use REDCap;
 
 class CLASSifyConnect extends AbstractExternalModule {
 
-    public function proxyJsonPost($apiPath)
-    {
+    public function proxyJsonPost($apiPath) {
         // Set up Monolog logger
         $logFile = __DIR__ . '/logs/guzzle.log';
         $logger = new Logger('guzzle');
@@ -47,27 +46,89 @@ class CLASSifyConnect extends AbstractExternalModule {
 
         // Remove the CSRF token
         unset($postData['redcap_csrf_token']);
-
         try {
             $response = $guzzleClient->post($apiUrl, [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $apiKey,
-                    //'Accept' => 'application/json',
-                    //'Content-Type' => 'application/json',
                     'Content-Type' => 'application/x-www-form-urlencoded',
                 ],
                 'form_params' => $postData,
-                //'body' => http_build_query($postData, '', '&', PHP_QUERY_RFC3986),
             ]);
-
-            //http_response_code($response->getStatusCode());
             http_response_code($response->getStatusCode());
             header('Content-Type: application/json'); // ✅ required
+
+            $body = (string) $response->getBody();
+            $contentType = $response->getHeaderLine('Content-Type');
+
+            // Try to decode JSON, if applicable
+            $data = stripos($contentType, 'application/json') !== false
+                ? json_decode($body, true)
+                : $body;
+
             echo json_encode([
                 'success' => true,
-                'message' => 'Action recorded successfully'
+                'message' => 'Action proxied successfully',
+                'data' => $data,
             ]);
-            //echo $response->getBody();
+        } catch (RequestException $e) {
+            $response = $e->getResponse();
+            $statusCode = $response ? $response->getStatusCode() : 500;
+            $body = $response ? (string) $response->getBody() : $e->getMessage();
+
+            http_response_code($statusCode);
+            header('Content-Type: application/json'); // ✅ required
+            echo json_encode([
+                'success' => false,
+                'message' => 'Request failed',
+                'error' => $body,
+            ]);
+        }
+    }
+
+    public function proxyJsonGet($apiPath) {
+        // Set up Monolog logger
+        $logFile = __DIR__ . '/logs/guzzle.log';
+        $logger = new Logger('guzzle');
+        $logger->pushHandler(new StreamHandler($logFile, Logger::DEBUG));
+
+        // Guzzle logging
+        $stack = HandlerStack::create();
+        $stack->push(Middleware::log($logger, new MessageFormatter(MessageFormatter::DEBUG)));
+
+        $guzzleClient = new Client(['handler' => $stack]);
+
+        $apiUrl = rtrim($this->getSystemSetting('api_url') ?: 'https://classify.ai.uky.edu/', '/') . $apiPath;
+        $apiKey = $this->getProjectSetting('api_key')[0];
+
+        $rawInput = file_get_contents('php://input');
+
+        // Parse URL-encoded POST body into array
+        parse_str($rawInput, $postData);
+
+        // REDCap CSRF token will be in $_POST
+        $_POST = $postData;
+
+        // Remove the CSRF token
+        unset($postData['redcap_csrf_token']);
+        try {
+            $response = $guzzleClient->get($apiUrl, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Content-Type' => 'application/x-www-form-urlencoded',
+                ],
+            ]);
+            http_response_code($response->getStatusCode());
+            header('Content-Type: application/json'); // ✅ required
+
+            $body = (string) $response->getBody();
+            $contentType = $response->getHeaderLine('Content-Type');
+
+            // Try to decode JSON, if applicable
+            $data = stripos($contentType, 'application/json') !== false
+                ? json_decode($body, true)
+                : $body;
+
+            echo json_encode($data);
         } catch (RequestException $e) {
             $response = $e->getResponse();
             $statusCode = $response ? $response->getStatusCode() : 500;

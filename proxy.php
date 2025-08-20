@@ -65,6 +65,11 @@ try {
             echo $response;
             break;
 
+        case 'reports_list':
+            $response = $module->proxyJsonGet('/reports/list');
+            echo $response;
+            break;
+
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid or missing action.']);
