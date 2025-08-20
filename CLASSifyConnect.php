@@ -294,7 +294,7 @@ class CLASSifyConnect extends AbstractExternalModule {
                 const moduleData= <?= json_encode($data) ?>;
                 const moduleCSV = <?= json_encode($data) ?>;
                 const moduleByIns = <?= json_encode($data_by_instrument) ?>;
-                console.log(moduleByIns)
+                ////console.log(moduleByIns)
                 const selectedForms = <?= json_encode($form) ?>;
                 const classifier = <?= json_encode($classifier) ?>;
                 const email = <?= json_encode($email) ?>;

@@ -215,7 +215,7 @@ foreach ($metadata as $field => $attributes) {
     <div id="cover-spin"></div>
 
     <script type="text/javascript">
-        console.log(ExternalModules.CSRF_TOKEN)
+        //console.log(ExternalModules.CSRF_TOKEN)
         var collection = {};
         var collectionTable = $('#collection');
         var collectionDataTable = null;
@@ -234,7 +234,7 @@ foreach ($metadata as $field => $attributes) {
             if (api_key === null || api_key === '') {
                 alert('You must add a CLASSify API key to the module configuration panel.');
             }
-            console.log('forms modal shown');
+            //console.log('forms modal shown');
         });
 
         function getSelectedForms() {
@@ -313,13 +313,13 @@ foreach ($metadata as $field => $attributes) {
 
 
         $('#columnsModal').on('hidden.bs.modal', function () {
-            console.log('clearml status: ' + uploaded_to_clearml);
+            //console.log('clearml status: ' + uploaded_to_clearml);
             document.getElementById('column_names').innerHTML = '';
             $('#select-class').empty();
             $('#select-class').append('<option value="no-class-column-selected" style="color:gray; font-style: italic;">No Class Column</option>');
             //$("#select-class").selectpicker('refresh');
             if (!uploaded_to_clearml) {
-                console.log('yep it was false');
+                //console.log('yep it was false');
                 $.ajax({
                     url: '<?= $module->getUrl("proxy.php") ?>&action=update_action',
                     method: 'POST',
@@ -329,7 +329,7 @@ foreach ($metadata as $field => $attributes) {
                         action: 'Deleted report'
                     },
                     success: function(res) {
-                        console.log('yeah we in the success box for deleteing');
+                        //console.log('yeah we in the success box for deleteing');
                         if (res.success) {
                             $.ajax({ //Delete report to prevent clearml dataset error
                                 url: '<?= $module->getUrl("proxy.php") ?>&action=reports_delete',
@@ -352,14 +352,14 @@ foreach ($metadata as $field => $attributes) {
                         }
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
-                        console.log('nah we in the error box for deleteing');
+                        //console.log('nah we in the error box for deleteing');
                         showError('Error communicating with the server');
                     }
                 });
 
             }
             else { //Already uploaded to clearml
-                console.log('nope it was true');
+                //console.log('nope it was true');
                 $('#gotoMLOpts').hide();
                 $('#submit-to-automl').show();
                 uploaded_to_clearml=false;
@@ -368,7 +368,7 @@ foreach ($metadata as $field => $attributes) {
 
         // This needs to be updated to create a file from the selected data in the REDCap Project.
         $('#submitUploadBtn').click(function() {
-            console.log('submit clicked')
+            //console.log('submit clicked')
             var fileName = $(this).val().split('\\').pop();
             $('#uploadReportFileLabel').html(fileName);
 
@@ -387,7 +387,7 @@ foreach ($metadata as $field => $attributes) {
                 return null;
             }
 
-            console.log('user_uuid: ' + user_uuid);
+            //console.log('user_uuid: ' + user_uuid);
 
             const csv = generateCSVFromData(combinedData);
 
@@ -459,22 +459,22 @@ foreach ($metadata as $field => $attributes) {
                                 action: 'Uploaded dataset'
                             },
                             success: function (res) {
-                                console.log(res)
+                                //console.log(res)
                                 if (res.success) {
-                                    console.log('res success!')
+                                    //console.log('res success!')
                                     toggleLoadingScreenOverlay();
                                     showSuccess('Dataset uploaded');
                                     $('#uploadModal').modal('hide');
                                     $('#columnsModal').modal('show');
                                     showColumns(column_types['data_types'], column_types['missing_values']);
                                 } else {
-                                    console.log(res);
+                                    //console.log(res);
                                     showError(res.message);
                                     toggleLoadingScreenOverlay();
                                 }
                             },
                             error: function () {
-                                console.log(res)
+                                //console.log(res)
                                 toggleLoadingScreenOverlay();
                                 showError('Error communicating with the server');
                             }
@@ -493,7 +493,7 @@ foreach ($metadata as $field => $attributes) {
         });
 
         function showColumns(data_types, missing_values) {
-            console.log(data_types);
+            //console.log(data_types);
             let toAppendBool = "";
             let toggle = 0;
             let column_names = []
@@ -773,7 +773,7 @@ foreach ($metadata as $field => $attributes) {
         });
 
         $('#classifierModal').on('shown.bs.modal', function () {
-            console.log('classifierModal');
+            //console.log('classifierModal');
             let dropdown = document.getElementById('class-selector');
 
             let fields_sorted = <?= json_encode($fieldsByInstrument)?>;
@@ -807,10 +807,10 @@ foreach ($metadata as $field => $attributes) {
 
         }
 
-        console.log('user_uuid: ' + user_uuid)
+        //console.log('user_uuid: ' + user_uuid)
 
         $(function() {
-            console.log('inside that function block')
+            //console.log('inside that function block')
             $('.custom-file-input').on('change', function() {
                 var fileName = $(this).val().split('\\').pop();
                 $(this).next('.custom-file-label').addClass("selected").html(fileName);
