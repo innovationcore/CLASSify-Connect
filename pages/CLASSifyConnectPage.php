@@ -61,7 +61,10 @@ foreach ($metadata as $field => $attributes) {
     </style>
 
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
-        <h1 class="h4">Data - <span class="text-muted">Upload</span></h1>
+        <h1 class="h4 text-muted">Data in the below table is read-only.
+            Please visit <a href="https://classify.ai.uky.edu" target="_blank">classify.ai.uky.edu</a>
+            to make changes.
+        </h1>
     </div>
 
     <div class="row selection-btns">
@@ -69,32 +72,39 @@ foreach ($metadata as $field => $attributes) {
             <a id="add-data-btn" data-bs-toggle="modal" data-bs-target="#uploadModal">
                 <div class="center-home-sects">
                     <span><i class="fa fa-plus"></i></span><br>
-                    <h5>Add Data File</h5>
+                    <h5>Upload REDCap Form(s)</h5>
                 </div>
             </a>
         </div>
         <div class="col-md-6">
             <a id="view-all-btn" href="https://classify.ai.uky.edu/result" class="center-home-sects">
                 <div class="center-home-sects">
-                    <span><i class="fas fa-bars"></i></span><br>
-                    <h5>View All Data</h5>
+                    <span><i class="fas fa-paper-plane"></i></span><br>
+                    <h5>Go to CLASSify</h5>
                 </div>
             </a>
         </div>
     </div>
 
-    <div class="row">
+    <div class="row" style="margin-top: 5px;">
         <div class="col">
-
-            <h2 id="preview-text" style="display:none;">Preview</h2>
             <table id="collection" class="table table-bordered dt-responsive responsive-text" style="width:100%">
                 <thead>
-                <tr></tr>
+                <tr>
+                    <th style="text-align: center;">Filename</th>
+                    <th style="text-align: center;">Notes</th>
+                    <th style="text-align: center;">Date Added</th>
+                    <th style="text-align: center;">Status</th></tr>
                 </thead>
                 <tbody>
                 </tbody>
                 <tfoot>
-                <tr></tr>
+                <tr>
+                    <th style="text-align: center;">Filename</th>
+                    <th style="text-align: center;">Notes</th>
+                    <th style="text-align: center;">Date Added</th>
+                    <th style="text-align: center;">Status</th>
+                </tr>
                 </tfoot>
             </table>
         </div>
@@ -138,7 +148,7 @@ foreach ($metadata as $field => $attributes) {
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="submit-to-automl">Upload Dataset</button>
-                    <a href="https://classify.ai.uky.edu/result" id="gotoMLOpts" type="button" class="btn btn-primary me-2" style="display:none;">
+                    <a href="https://classify.ai.uky.edu/result" id="gotoMLOpts" target="_blank" type="button" class="btn btn-primary me-2" style="display:none;">
                         <i class="fa fa-eye"></i> View Uploaded Data
                     </a>
                 </div>
@@ -209,7 +219,7 @@ foreach ($metadata as $field => $attributes) {
         var collection = {};
         var collectionTable = $('#collection');
         var collectionDataTable = null;
-        var user_uuid = null;
+        var user_uuid = <?= json_encode($api_key)?>[0];;
         var currentFile = null;
         var report_uuid = null;
         var uploaded_to_clearml=false;
@@ -221,6 +231,9 @@ foreach ($metadata as $field => $attributes) {
 
         // Change this so that it rejects user if they haven't input an API key.
         $('#uploadModal').on('shown.bs.modal', function () {
+            if (api_key === null || api_key === '') {
+                alert('You must add a CLASSify API key to the module configuration panel.');
+            }
             console.log('forms modal shown');
         });
 
@@ -300,30 +313,27 @@ foreach ($metadata as $field => $attributes) {
 
 
         $('#columnsModal').on('hidden.bs.modal', function () {
+            console.log('clearml status: ' + uploaded_to_clearml);
             document.getElementById('column_names').innerHTML = '';
             $('#select-class').empty();
             $('#select-class').append('<option value="no-class-column-selected" style="color:gray; font-style: italic;">No Class Column</option>');
-            $("#select-class").selectpicker('refresh');
+            //$("#select-class").selectpicker('refresh');
             if (!uploaded_to_clearml) {
+                console.log('yep it was false');
                 $.ajax({
                     url: '<?= $module->getUrl("proxy.php") ?>&action=update_action',
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
                     data: {
                         redcap_csrf_token: ExternalModules.CSRF_TOKEN,
                         report_uuid: report_uuid,
                         action: 'Deleted report'
                     },
                     success: function(res) {
+                        console.log('yeah we in the success box for deleteing');
                         if (res.success) {
                             $.ajax({ //Delete report to prevent clearml dataset error
                                 url: '<?= $module->getUrl("proxy.php") ?>&action=reports_delete',
                                 type: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
                                 data: {
                                     redcap_csrf_token: ExternalModules.CSRF_TOKEN,
                                     'report_uuid': report_uuid
@@ -342,12 +352,14 @@ foreach ($metadata as $field => $attributes) {
                         }
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
+                        console.log('nah we in the error box for deleteing');
                         showError('Error communicating with the server');
                     }
                 });
 
             }
             else { //Already uploaded to clearml
+                console.log('nope it was true');
                 $('#gotoMLOpts').hide();
                 $('#submit-to-automl').show();
                 uploaded_to_clearml=false;
@@ -422,23 +434,10 @@ foreach ($metadata as $field => $attributes) {
 
             toggleLoadingScreenOverlay();
 
-            console.log(csv);
-
-            //var form_data = new FormData();
-            //form_data.append('file', csv); // from the aaron version
-
             const formData = new FormData();
             formData.append('redcap_csrf_token', ExternalModules.CSRF_TOKEN);
             formData.append('action', 'reports-submit');
             formData.append('file', file);  // Assuming `csv` is a string
-
-            //console.log(file);
-
-
-            //console.log(<?= json_encode($api_key[0]) ?>);
-            //console.log('<?= $classifyURL ?>');
-            //console.log(ExternalModules.CSRF_TOKEN);
-            //console.log(form_data);
 
             $.ajax({
                 url: '<?= $module->getUrl("proxy.php") ?>&action=reports_submit',
@@ -586,7 +585,7 @@ foreach ($metadata as $field => $attributes) {
             if (!classOptionExists) {
                 $('#select-class').prop('selectedIndex', -1);
             }
-            $("#select-class").selectpicker('refresh');
+            //$("#select-class").selectpicker('refresh');
 
             modal_checkboxes.forEach(function(checkbox) {
                 checkbox.addEventListener('click', function() {
@@ -645,159 +644,6 @@ foreach ($metadata as $field => $attributes) {
         $('#gotoMLOpts').click(function() {
             window.location
         });
-
-        /*$('#submit-to-automl').click(function() {
-            if(confirm("Are you sure you want to submit this data for processing?")){
-                toggleLoadingScreenOverlay()
-                let error = 0;
-                //let form = $('#column_names').serializeArray();
-                let form = [];
-                let class_column = $('#select-class').val();
-                if (class_column == null || class_column === 'no-class-column-selected') {
-                    if(!confirm("You have not selected a class column, which will limit your potential models to only unsupervised clustering. Continue?")){
-                        $('#select-class').closest('.bootstrap-select').addClass('highlighted'); //Highlight the selectpicker to emphasize to user
-                        error = 1;
-                    }
-                }
-                $('.form-check-input').each(function(index, element) {
-                    if ($(element).attr('type') === 'checkbox') {
-                        if (element.id === class_column) {
-                            if (!$(element).is(':checked')) {
-                                showError('Your chosen class column, "'+element.id+'", must be selected in the column list.');
-                                error = 1;
-                                return;
-                            }
-                        }
-                        let checked_type = document.querySelector('input[name="'+element.id+'"]:checked').id;
-                        let type = checked_type.substring(checked_type.lastIndexOf('-')+1);
-                        if ((element.id === class_column ) && (type === 'float' || type === 'categorical')) {
-                            showError('Your chosen class column, "'+element.id+'", must be of type bool or integer.');
-                            error = 1;
-                            return;
-                        }
-                        if (document.getElementById(element.id+'-missing-values')) { //If there's missing values to deal with
-                            let fill_method = document.getElementById(element.id+'-missing-values').value;
-                            let fill_value = null;
-                            if (fill_method === 'constant') {
-                                fill_value = document.getElementById(element.id+'-fill-value').value;
-                                if (type === 'integer') {
-                                    if (Number.isInteger(Number(fill_value))) {
-                                        fill_value = Number(fill_value);
-                                    } else {
-                                        showError('Fill value for column '+element.id+' not valid for type integer.');
-                                        error = 1;
-                                        return;
-                                    }
-                                }
-                                else if (type === 'float') {
-                                    if (!isNaN(Number(fill_value)) && (Number.isFinite(Number(fill_value)))) {
-                                        fill_value = Number(fill_value);
-                                    } else {
-                                        showError('Fill value for column '+element.id+' not valid for type float.');
-                                        error = 1;
-                                        return;
-                                    }
-                                }
-                                else if (type === 'bool') {
-                                    if (fill_value === 'true' || fill_value === '1' || fill_value === 'True' || fill_value === 'TRUE') {
-                                        fill_value = 1;
-                                    } else if (fill_value === 'false' || fill_value === '0' || fill_value === 'False' || fill_value === 'FALSE'){
-                                        fill_value = 0;
-                                    } else {
-                                        showError('Fill value for column '+element.id+' not valid for type bool.');
-                                        error = 1;
-                                        return;
-                                    }
-                                } //Don't need to check categorical type, because any entry would be valid for string
-                            }
-                            if (element.id === class_column) {
-                                form.push({column:element.id, data_type:type, checked:$(element).is(':checked'), missing:fill_method, fill_value:fill_value, class:true})
-                            }
-                            else {
-                                form.push({column:element.id, data_type:type, checked:$(element).is(':checked'), missing:fill_method, fill_value:fill_value})
-                            }
-                        }
-                        else {
-                            if (element.id === class_column) {
-                                form.push({column:element.id, data_type:type, checked:$(element).is(':checked'), missing:null, fill_value:null, class:true})
-                            }
-                            else {
-                                form.push({column:element.id, data_type:type, checked:$(element).is(':checked'), missing:null, fill_value:null})
-                            }
-                        }
-                        // } else {
-                        //     form.push({column:element.id, data_type:'none', checked:false}) //If dropped column, update actions
-                        // }
-
-                    }
-                });
-                if (error === 1) {
-                    toggleLoadingScreenOverlay()
-                    return null;
-                }
-                else if (currentFile !== null) {
-                    $.ajax({
-                        url: '<?= $module->getUrl("proxy.php") ?>&action=change_column_types',
-                        type: 'POST',
-                        data: {
-                            redcap_csrf_token: ExternalModules.CSRF_TOKEN,
-                            'filename': currentFile,
-                            'data_types': JSON.stringify(form)
-                        },
-                        contentType: 'application/json; charset=utf-8',
-                        success: function(data) {
-                            if (data.success === false) {
-                                toggleLoadingScreenOverlay()
-                                showError(data.message);
-                                return null;
-                            }
-                            else {
-                                let column_types_updated = data.data_types;
-                                $.ajax({ //Update table with column changes so they can be applied to test set if necessary
-                                    url: '<?= $module->getUrl("proxy.php") ?>&action=set-column_changes',
-                                    type: 'POST',
-                                    data: {
-                                        redcap_csrf_token: ExternalModules.CSRF_TOKEN,
-                                        'filename': currentFile,
-                                        'column_changes': JSON.stringify(column_types_updated)
-                                    },
-                                    success: function(data) {
-                                        if (data.success == false) {
-                                            toggleLoadingScreenOverlay()
-                                            showError(data.message);
-                                            return null;
-                                        }
-                                        else {
-                                            showSuccess(data.message);
-                                            $('#gotoMLOpts').show();
-                                            $('#submit-to-automl').hide();
-                                            uploaded_to_clearml=true;
-                                            toggleLoadingScreenOverlay()
-                                        }
-
-                                    },
-                                    error: function (xhr, status, error) {
-                                        toggleLoadingScreenOverlay()
-                                        showError("Error communicating with the server.");
-                                        return null;
-                                    }
-                                });
-                            }
-
-                        },
-                        error: function (xhr, status, error) {
-                            toggleLoadingScreenOverlay()
-                            showError("Error communicating with the server.");
-                            return null;
-                        }
-                    });
-
-                } else {
-                    toggleLoadingScreenOverlay()
-                    showError("Please upload a file first.");
-                }
-            }
-        });*/
 
         $('#submit-to-automl').click(function() {
             if(confirm("Are you sure you want to submit this data for processing?")){
@@ -960,4 +806,71 @@ foreach ($metadata as $field => $attributes) {
             }
 
         }
+
+        console.log('user_uuid: ' + user_uuid)
+
+        $(function() {
+            console.log('inside that function block')
+            $('.custom-file-input').on('change', function() {
+                var fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').addClass("selected").html(fileName);
+            });
+
+            collectionDataTable = collectionTable.DataTable({
+            serverSide: true,
+            processing: true,
+            ajax: {
+                url: '<?= $module->getUrl("proxy.php") ?>&action=reports_list'
+            },
+            order: [[ 2, "desc" ]],
+            responsive: true,
+            buttons: ['pageLength'],
+            columnDefs: [
+                {
+                    className: "dt-center",
+                    targets: [0, 1, 2, 3]
+                },
+                {
+                    orderable: true,
+                    targets: [0, 1, 2]
+                }
+            ],
+            language: {
+                emptyTable: "No data have been added"
+            },
+            pagingType: "full_numbers",
+            columns: [
+                {
+                    data: 'filename',
+                    render: function(data, type, row) {
+                        return `<span style="display: inline-block; max-width: 20rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${data}">
+                        ${data}
+                    </span>`;
+                    }
+                },
+                {
+                    data: 'comments',
+                    render: function(data, type, row) {
+                        return `
+                            <div class="input-group">
+                                <div class="form-control note-input" style="min-width: 20rem; min-height: 5.25rem; overflow-y: auto; text-align: left;">${data || ''}</div>                            \
+                            </div>`;
+                    }
+                },
+                {
+                    data: 'dateAdded',
+                },
+                {
+                    data: 'status',
+                    title: 'Status',
+                    width: '10rem',
+                    render: function (data) {
+                        return `<span>${data}</span>`;
+                    }
+                },
+            ]
+        });
+
+
+        });
     </script>
