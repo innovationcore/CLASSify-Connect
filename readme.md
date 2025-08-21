@@ -43,3 +43,6 @@ requests on your behalf.
 
 Once you have your API key, you may go to the `External Modules` tab on the left-hand side of REDCap and select `Manage`. Provided
 that you have enabled the module, you can then input your API key in the approved field, and save your configuration. Now the module is ready for work.
+
+## Contact
+Issues can be reported ideally by pull request on this project's [Github Page](https://github.com/innovationcore/CLASSify-Connect) or additionally I can be reached by [email](mailto:noah.perry@uky.edu).
