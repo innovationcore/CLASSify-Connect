@@ -231,7 +231,7 @@ foreach ($metadata as $field => $attributes) {
 
         // Change this so that it rejects user if they haven't input an API key.
         $('#uploadModal').on('shown.bs.modal', function () {
-            if (api_key === null || api_key === '') {
+            if (user_uuid === null || user_uuid === '') {
                 alert('You must add a CLASSify API key to the module configuration panel.');
             }
             //console.log('forms modal shown');
