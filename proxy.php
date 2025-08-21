@@ -1,5 +1,6 @@
 <?php
-file_put_contents('redcap_ajax_debug.log', print_r($_POST, true));
+
+namespace CAAIModules\CLASSifyConnect;
 
 use ExternalModules\ExternalModules;
 use ExternalModules\AbstractExternalModule;
@@ -7,10 +8,6 @@ use ExternalModules\AbstractExternalModule;
 $module = ExternalModules::getModuleInstance('CLASSify-Connect'); // replace with your module directory
 
 header('Content-Type: application/json');
-
-// FOR TESTING ONLY:
-//echo json_encode(['success' => true, 'message' => 'Test successful! The proxy.php file is reachable.']);
-//exit(); // Stop the script here
 
 if (!defined('PAGE')) define('PAGE', 'ajax');
 
@@ -36,26 +33,21 @@ try {
             break;
 
         case 'verify_dataset':
-            // File Post
-            //$response = $module->proxyPost('/verify_dataset');
             $response = $module->proxyJsonPost('/verify_dataset');
             echo $response;
             break;
 
         case 'get_column_types':
-            //$response = $module->proxyFilePost('/get_column_types');
             $response = $module->proxyJsonPost('/get_column_types');
             echo $response;
             break;
 
         case 'change_column_types':
-            //$response = $module->proxyFilePost('/get_column_types');
             $response = $module->proxyJsonPost('/api/change_column_types');
             echo $response;
             break;
 
         case 'set_column_changes':
-            //$response = $module->proxyFilePost('/get_column_types');
             $response = $module->proxyJsonPost('/reports/set-column_changes');
             echo $response;
             break;

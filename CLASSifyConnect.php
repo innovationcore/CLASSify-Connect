@@ -14,22 +14,20 @@ use GuzzleHttp\Middleware;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
-
 use REDCap;
 
 
 
 class CLASSifyConnect extends AbstractExternalModule {
-
     public function proxyJsonPost($apiPath) {
         // Set up Monolog logger
-        $logFile = __DIR__ . '/logs/guzzle.log';
-        $logger = new Logger('guzzle');
-        $logger->pushHandler(new StreamHandler($logFile, Logger::DEBUG));
+        //$logFile = __DIR__ . '/logs/guzzle.log';
+        //$logger = new Logger('guzzle');
+        //$logger->pushHandler(new StreamHandler($logFile, Logger::DEBUG));
 
         // Guzzle logging
         $stack = HandlerStack::create();
-        $stack->push(Middleware::log($logger, new MessageFormatter(MessageFormatter::DEBUG)));
+        //$stack->push(Middleware::log($logger, new MessageFormatter(MessageFormatter::DEBUG)));
 
         $guzzleClient = new Client(['handler' => $stack]);
 
@@ -87,13 +85,13 @@ class CLASSifyConnect extends AbstractExternalModule {
 
     public function proxyJsonGet($apiPath) {
         // Set up Monolog logger
-        $logFile = __DIR__ . '/logs/guzzle.log';
-        $logger = new Logger('guzzle');
-        $logger->pushHandler(new StreamHandler($logFile, Logger::DEBUG));
+        //$logFile = __DIR__ . '/logs/guzzle.log';
+        //$logger = new Logger('guzzle');
+        //$logger->pushHandler(new StreamHandler($logFile, Logger::DEBUG));
 
         // Guzzle logging
         $stack = HandlerStack::create();
-        $stack->push(Middleware::log($logger, new MessageFormatter(MessageFormatter::DEBUG)));
+        //$stack->push(Middleware::log($logger, new MessageFormatter(MessageFormatter::DEBUG)));
 
         $guzzleClient = new Client(['handler' => $stack]);
 
@@ -148,19 +146,14 @@ class CLASSifyConnect extends AbstractExternalModule {
     public function proxyFormPost($apiPath)
     {
         // Set up Monolog logger
-        $logFile = __DIR__ . '/logs/guzzle.log';  // __DIR__ is the current module folder
-        $logger = new Logger('guzzle');
-        $logger->pushHandler(new StreamHandler($logFile, Logger::DEBUG));
+        //$logFile = __DIR__ . '/logs/guzzle.log';  // __DIR__ is the current module folder
+        //$logger = new Logger('guzzle');
+        //$logger->pushHandler(new StreamHandler($logFile, Logger::DEBUG));
 
 
         // Create Guzzle handler stack with logging
         $stack = HandlerStack::create();
-        $stack->push(
-            Middleware::log(
-                $logger,
-                new MessageFormatter(MessageFormatter::DEBUG) // You can customize the format
-            )
-        );
+        //$stack->push(Middleware::log($logger, new MessageFormatter(MessageFormatter::DEBUG)));
 
         $guzzleClient = new Client(['handler' => $stack]);
         $apiUrl = rtrim($this->getSystemSetting('api_url') ?: 'https://classify.ai.uky.edu', '/') . $apiPath;
@@ -294,7 +287,6 @@ class CLASSifyConnect extends AbstractExternalModule {
                 const moduleData= <?= json_encode($data) ?>;
                 const moduleCSV = <?= json_encode($data) ?>;
                 const moduleByIns = <?= json_encode($data_by_instrument) ?>;
-                ////console.log(moduleByIns)
                 const selectedForms = <?= json_encode($form) ?>;
                 const classifier = <?= json_encode($classifier) ?>;
                 const email = <?= json_encode($email) ?>;
