@@ -283,15 +283,16 @@ class CLASSifyConnect extends AbstractExternalModule {
 
             <!-- Sets some global variables that are needed in JS code across the module. -->
             <script>
-                const instruments = <?=json_encode($instruments)?>;
-                const moduleData= <?= json_encode($data) ?>;
-                const moduleCSV = <?= json_encode($data) ?>;
-                const moduleByIns = <?= json_encode($data_by_instrument) ?>;
-                const selectedForms = <?= json_encode($form) ?>;
-                const classifier = <?= json_encode($classifier) ?>;
-                const email = <?= json_encode($email) ?>;
-                const project_title = <?= json_encode($project_title) ?>;
+                const instruments = <?= $this->escape(json_encode($instruments)) ?>;
+                const moduleData = <?= $this->escape(json_encode($data)) ?>;
+                const moduleCSV = <?= $this->escape(json_encode($data)) ?>;
+                const moduleByIns = <?= $this->escape(json_encode($data_by_instrument)) ?>;
+                const selectedForms = <?= $this->escape(json_encode($form)) ?>;
+                const classifier = <?= $this->escape(json_encode($classifier)) ?>;
+                const email = <?= $this->escape(json_encode($email)) ?>;
+                const project_title = <?= $this->escape(json_encode($project_title)) ?>;
             </script>
+
 
             <!-- Includes the code needed to make the modal popups for CLASSify interaction work. -->
             <script src="<?= $this->getUrl('js/modals.js')?>"></script>
