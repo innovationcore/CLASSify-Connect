@@ -2,7 +2,7 @@
     "name": "CLASSify Connect",
     "description": "A tool which allows a user to connect their REDCap data to the CLASSify assisted machine learning training service.",
     "namespace": "CAAIModules\\CLASSifyConnect",
-    "framework-version": 12,
+    "framework-version": 15,
     "authors": [
         {
             "name": "Noah Perry",
